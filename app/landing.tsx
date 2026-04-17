@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   LayoutChangeEvent,
   ViewStyle,
+  StyleProp,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -18,10 +19,13 @@ import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { FontSize, FontWeight } from '../constants/typography';
 import { Radii } from '../constants/radii';
-import { SecondaryButton } from '../components/ui/SecondaryButton';
 
-const NAV_BAR_HEIGHT = 56;
+const NAV_BAR_HEIGHT = 58;
 const BREAKPOINT = 780;
+const CONTENT_MAX = 1080;
+const HERO_NAVY = '#0F172A';
+const HERO_BLUE = '#1D4ED8';
+const HERO_MID = '#172554';
 
 const SECTION_KEYS = ['features', 'pricing', 'reviews', 'faq'] as const;
 type SectionKey = (typeof SECTION_KEYS)[number];
@@ -37,6 +41,16 @@ function WebSectionAnchor({ id, children }: { id: string; children: React.ReactN
   return <>{children}</>;
 }
 
+function PageShell({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.pageShell, style]}>{children}</View>;
+}
+
 function HeroCtaButton({
   label,
   onPress,
@@ -50,32 +64,85 @@ function HeroCtaButton({
 }) {
   if (variant === 'secondary') {
     return (
-      <SecondaryButton
-        label={label}
+      <Pressable
         onPress={onPress}
-        style={StyleSheet.flatten([styles.heroCtaSecondary, containerStyle])}
-        textStyle={{ color: Colors.textPrimary }}
-      />
+        style={({ pressed }) => [
+          styles.heroCtaGhost,
+          containerStyle,
+          { opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <Text style={styles.heroCtaGhostLabel}>{label}</Text>
+      </Pressable>
     );
   }
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.heroCtaPrimaryWrap,
+        styles.heroCtaSolidWrap,
         containerStyle,
-        { opacity: pressed ? 0.88 : 1 },
+        { opacity: pressed ? 0.92 : 1 },
       ]}
     >
-      <LinearGradient
-        colors={['#6366F1', '#4F46E5', '#4338CA']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroCtaPrimary}
-      >
-        <Text style={styles.heroCtaPrimaryLabel}>{label}</Text>
-      </LinearGradient>
+      <View style={styles.heroCtaSolid}>
+        <Text style={styles.heroCtaSolidLabel}>{label}</Text>
+      </View>
     </Pressable>
+  );
+}
+
+function BrowserAppPreview({ isWide }: { isWide: boolean }) {
+  return (
+    <View style={[styles.browserFrame, !isWide && styles.browserFrameNarrow]}>
+      <View style={styles.browserChrome}>
+        <View style={styles.browserTraffic}>
+          <View style={[styles.trafficDot, { backgroundColor: '#FF5F57' }]} />
+          <View style={[styles.trafficDot, { backgroundColor: '#FEBC2E' }]} />
+          <View style={[styles.trafficDot, { backgroundColor: '#28C840' }]} />
+        </View>
+        <View style={styles.browserUrlBar}>
+          <Text style={styles.browserUrlText} numberOfLines={1}>
+            budgetapp.vercel.app/(tabs)
+          </Text>
+        </View>
+      </View>
+      <View style={styles.browserBody}>
+        <View style={styles.mockSidebar}>
+          <View style={styles.mockSidebarActive} />
+          <View style={styles.mockSidebarItem} />
+          <View style={styles.mockSidebarItem} />
+          <View style={styles.mockSidebarItem} />
+        </View>
+          <View style={styles.mockMain}>
+          <View style={styles.mockSearch} />
+          <View style={styles.mockRow}>
+            <View style={styles.mockBarTrack}>
+              <View style={[styles.mockRowBar, { width: '100%' }]} />
+            </View>
+            <View style={styles.mockPill}>
+              <Text style={styles.mockPillText}>Food</Text>
+            </View>
+          </View>
+          <View style={styles.mockRow}>
+            <View style={styles.mockBarTrack}>
+              <View style={[styles.mockRowBar, { width: '72%' }]} />
+            </View>
+            <View style={[styles.mockPill, styles.mockPillBlue]}>
+              <Text style={styles.mockPillTextBlue}>Bills</Text>
+            </View>
+          </View>
+          <View style={styles.mockRow}>
+            <View style={styles.mockBarTrack}>
+              <View style={[styles.mockRowBar, { width: '55%' }]} />
+            </View>
+            <View style={[styles.mockPill, styles.mockPillGreen]}>
+              <Text style={styles.mockPillTextGreen}>On track</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -118,7 +185,7 @@ function PricingCard({
     <View style={[styles.priceCard, emphasized && styles.priceCardEmphasized]}>
       {emphasized ? (
         <LinearGradient
-          colors={['rgba(99, 102, 241, 0.35)', 'rgba(67, 56, 202, 0.15)']}
+          colors={['rgba(30, 64, 175, 0.35)', 'rgba(15, 23, 42, 0.2)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
@@ -198,9 +265,14 @@ export default function LandingScreen() {
   const navPadTop = insets.top;
   const scrollPadTop = navPadTop + NAV_BAR_HEIGHT + Spacing.lg;
 
-  const goAuth = useCallback(() => {
+  const goSignIn = useCallback(() => {
     setMenuOpen(false);
     router.push('/auth/sign-in');
+  }, []);
+
+  const goSignUp = useCallback(() => {
+    setMenuOpen(false);
+    router.push('/auth/sign-up');
   }, []);
 
   const scrollToSection = useCallback((key: SectionKey) => {
@@ -221,7 +293,7 @@ export default function LandingScreen() {
   };
 
   const navLink = (label: string, key: SectionKey) => (
-    <Pressable onPress={() => scrollToSection(key)} hitSlop={8}>
+    <Pressable onPress={() => scrollToSection(key)} hitSlop={8} style={styles.navLinkHit}>
       <Text style={styles.navLink}>{label}</Text>
     </Pressable>
   );
@@ -229,38 +301,51 @@ export default function LandingScreen() {
   return (
     <View style={styles.root}>
       <View style={[styles.navBar, { paddingTop: navPadTop }]}>
-        <View style={styles.navInner}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <Ionicons name="leaf" size={22} color={Colors.accent} />
-            </View>
-            <Text style={styles.brandText}>BudgetApp</Text>
-          </View>
-
-          {isWide ? (
-            <View style={styles.navLinks}>
-              {navLink('Features', 'features')}
-              {navLink('Pricing', 'pricing')}
-              {navLink('Reviews', 'reviews')}
-              {navLink('FAQ', 'faq')}
-            </View>
-          ) : null}
-
-          <View style={styles.navActions}>
-            {!isWide ? (
-              <Pressable
-                onPress={() => setMenuOpen((v) => !v)}
-                style={styles.iconBtn}
-                accessibilityLabel={menuOpen ? 'Close menu' : 'Open menu'}
-              >
-                <Ionicons name={menuOpen ? 'close' : 'menu'} size={24} color={Colors.textPrimary} />
-              </Pressable>
-            ) : null}
-            <Pressable onPress={goAuth} style={styles.signInPill}>
-              <Text style={styles.signInPillText}>Sign In</Text>
+        <PageShell style={styles.navShell}>
+          <View style={styles.navInner}>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} style={styles.brandPress}>
+              <View style={styles.brandRow}>
+                <View style={styles.brandMark}>
+                  <Ionicons name="wallet-outline" size={20} color="#FFFFFF" />
+                </View>
+                <Text style={styles.brandText}>BudgetApp</Text>
+              </View>
             </Pressable>
+
+            {isWide ? (
+              <View style={styles.navLinksWrap}>
+                {navLink('Features', 'features')}
+                {navLink('Pricing', 'pricing')}
+                {navLink('Reviews', 'reviews')}
+                {navLink('FAQ', 'faq')}
+              </View>
+            ) : (
+              <View style={styles.navFlexSpacer} />
+            )}
+
+            <View style={styles.navActions}>
+              {!isWide ? (
+                <Pressable
+                  onPress={() => setMenuOpen((v) => !v)}
+                  style={styles.iconBtn}
+                  accessibilityLabel={menuOpen ? 'Close menu' : 'Open menu'}
+                >
+                  <Ionicons name={menuOpen ? 'close' : 'menu'} size={24} color={HERO_NAVY} />
+                </Pressable>
+              ) : null}
+              {isWide ? (
+                <>
+                  <Pressable onPress={goSignIn} style={styles.signInPill}>
+                    <Text style={styles.signInPillText}>Sign In</Text>
+                  </Pressable>
+                  <Pressable onPress={goSignUp} style={styles.navGetStarted}>
+                    <Text style={styles.navGetStartedText}>Get Started</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </View>
           </View>
-        </View>
+        </PageShell>
 
         {!isWide && menuOpen ? (
           <View style={styles.mobileMenu}>
@@ -268,9 +353,14 @@ export default function LandingScreen() {
             {navLink('Pricing', 'pricing')}
             {navLink('Reviews', 'reviews')}
             {navLink('FAQ', 'faq')}
-            <Pressable onPress={goAuth} style={styles.mobileMenuCta}>
-              <Text style={styles.mobileMenuCtaText}>Get Started</Text>
-            </Pressable>
+            <View style={styles.mobileMenuActions}>
+              <Pressable onPress={goSignIn} style={styles.mobileGhost}>
+                <Text style={styles.mobileGhostText}>Sign In</Text>
+              </Pressable>
+              <Pressable onPress={goSignUp} style={styles.mobileMenuCta}>
+                <Text style={styles.mobileMenuCtaText}>Get Started</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
       </View>
@@ -281,88 +371,72 @@ export default function LandingScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: scrollPadTop }]}
         showsVerticalScrollIndicator={Platform.OS === 'web'}
       >
-        {/* Hero */}
-        <LinearGradient
-          colors={['#1E1B4B', '#312E81', '#1E3A8A']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <View style={styles.heroGlow} />
-          <Text style={styles.heroKicker}>Household budgeting</Text>
-          <Text style={styles.heroTitle}>Know where your money goes—every month.</Text>
-          <Text style={styles.heroSub}>
-            BudgetApp helps you track accounts, categorize spending, plan monthly limits, and stay
-            on top of recurring bills—with your data backed by Supabase.
-          </Text>
-          <View style={[styles.heroCtas, !isWide && styles.heroCtasCol]}>
-            <HeroCtaButton
-              label="Get Started"
-              onPress={goAuth}
-              containerStyle={!isWide ? styles.heroCtaFull : undefined}
-            />
-            <HeroCtaButton
-              label="Sign In"
-              onPress={goAuth}
-              variant="secondary"
-              containerStyle={!isWide ? styles.heroCtaFull : undefined}
-            />
-          </View>
-          <Text style={styles.heroTrust}>No credit card required to create an account.</Text>
-        </LinearGradient>
+        {/* Hero — full bleed, TaskManager-style */}
+        <View style={styles.heroBleed}>
+          <LinearGradient
+            colors={[HERO_BLUE, HERO_MID, HERO_NAVY, '#020617']}
+            locations={[0, 0.35, 0.7, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <LinearGradient
+            colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(0,0,0,0.2)']}
+            locations={[0, 0.35, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+          />
+          <PageShell style={styles.heroShell}>
+            <View style={styles.heroCopyBlock}>
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>FREE TO START · NO CREDIT CARD REQUIRED</Text>
+              </View>
+              <Text style={styles.heroTitle}>
+                Know where your money goes.{'\n'}Every month.
+              </Text>
+              <Text style={styles.heroSub}>
+                Track accounts, categories, recurring bills, and monthly budgets—with Supabase sync
+                and a focused mobile + web experience.
+              </Text>
+              <View style={[styles.heroCtas, !isWide && styles.heroCtasCol]}>
+                <HeroCtaButton
+                  label="Get Started Free"
+                  onPress={goSignUp}
+                  containerStyle={!isWide ? styles.heroCtaFull : undefined}
+                />
+                <HeroCtaButton
+                  label="Sign In →"
+                  onPress={goSignIn}
+                  variant="secondary"
+                  containerStyle={!isWide ? styles.heroCtaFull : undefined}
+                />
+              </View>
+            </View>
 
-        {/* App preview */}
-        <View style={styles.previewSection}>
-          <Text style={styles.sectionLabel}>Inside the app</Text>
-          <Text style={styles.sectionTitle}>A calm dashboard for real life</Text>
-          <Text style={styles.sectionSub}>
-            After you sign in, you will see Overview, Transactions, Budget, Bills, and Accounts—each
-            wired to the same month-aware data model used throughout the app.
-          </Text>
-          <View style={styles.previewMock}>
-            <View style={styles.previewPhone}>
-              <View style={styles.previewTopBar}>
-                <Text style={styles.previewTopTitle}>Overview</Text>
-                <View style={styles.previewDots}>
-                  <View style={styles.previewDot} />
-                  <View style={styles.previewDot} />
-                </View>
-              </View>
-              <LinearGradient
-                colors={[Colors.surfaceElevated, Colors.surface]}
-                style={styles.previewCard}
-              >
-                <Text style={styles.previewMuted}>This month</Text>
-                <Text style={styles.previewBig}>$2,480</Text>
-                <Text style={styles.previewMuted}>spent · sample layout</Text>
-              </LinearGradient>
-              <View style={styles.previewRow}>
-                <View style={styles.previewMini}>
-                  <Text style={styles.previewMiniLabel}>Food</Text>
-                  <View style={styles.previewBarBg}>
-                    <View style={[styles.previewBarFill, { width: '62%' }]} />
-                  </View>
-                </View>
-                <View style={styles.previewMini}>
-                  <Text style={styles.previewMiniLabel}>Transport</Text>
-                  <View style={styles.previewBarBg}>
-                    <View style={[styles.previewBarFill, { width: '38%', backgroundColor: Colors.blue }]} />
-                  </View>
-                </View>
-              </View>
+            <View style={styles.heroPreviewWrap}>
+              <BrowserAppPreview isWide={isWide} />
             </View>
-            <View style={[styles.previewPhone, styles.previewPhoneBack]}>
-              <Text style={styles.previewBackLabel}>Transactions</Text>
-              <View style={styles.previewLine} />
-              <View style={styles.previewLineShort} />
-              <View style={styles.previewLine} />
-            </View>
-          </View>
+          </PageShell>
         </View>
+
+        {/* App preview copy */}
+        <PageShell style={[styles.sectionBlock, styles.sectionAfterHero]}>
+          <View style={styles.previewIntro}>
+            <Text style={styles.sectionLabel}>Inside the app</Text>
+            <Text style={styles.sectionTitle}>A calm dashboard for real life</Text>
+            <Text style={styles.sectionSubNarrow}>
+              Overview, Transactions, Budget, Bills, and Accounts share the same month-aware data
+              model—so totals stay consistent as you move between tabs.
+            </Text>
+          </View>
+        </PageShell>
 
         {/* Features */}
         <WebSectionAnchor id="features">
-          <View onLayout={captureSectionLayout('features')}>
+          <View onLayout={captureSectionLayout('features')} style={styles.sectionBlock}>
+            <PageShell>
             <Text style={styles.sectionLabel}>Features</Text>
             <Text style={styles.sectionTitle}>Built around how you actually spend</Text>
             <Text style={styles.sectionSub}>
@@ -401,12 +475,14 @@ export default function LandingScreen() {
                 body="Email and password auth with sessions stored in Secure Store on native and localStorage on web, plus guided onboarding stored in your Supabase profile."
               />
             </View>
+            </PageShell>
           </View>
         </WebSectionAnchor>
 
         {/* Pricing */}
         <WebSectionAnchor id="pricing">
-          <View style={styles.pricingSection} onLayout={captureSectionLayout('pricing')}>
+          <View style={styles.sectionBlock} onLayout={captureSectionLayout('pricing')}>
+            <PageShell>
             <Text style={styles.sectionLabel}>Pricing</Text>
             <Text style={styles.sectionTitle}>Pick a lane that fits your household</Text>
             <Text style={styles.pricingHonest}>
@@ -418,7 +494,7 @@ export default function LandingScreen() {
                 price="$0"
                 blurb="For individuals getting organized."
                 highlights={['Core budgeting & bills', 'Supabase-backed sync', 'Mobile + web preview']}
-                onChoose={goAuth}
+                onChoose={goSignUp}
               />
               <PricingCard
                 name="Household"
@@ -426,22 +502,24 @@ export default function LandingScreen() {
                 blurb="Share visibility across partners (planned)."
                 highlights={['Everything in Starter', 'Shared categories (coming soon)', 'Priority polish pass']}
                 emphasized
-                onChoose={goAuth}
+                onChoose={goSignUp}
               />
               <PricingCard
                 name="Team"
                 price="$18 / mo"
                 blurb="For households that want structure at scale (planned)."
                 highlights={['Planned export tools', 'Planned roles & permissions', 'White-glove onboarding (planned)']}
-                onChoose={goAuth}
+                onChoose={goSignUp}
               />
             </View>
+            </PageShell>
           </View>
         </WebSectionAnchor>
 
         {/* Reviews */}
         <WebSectionAnchor id="reviews">
-          <View style={styles.reviewsSection} onLayout={captureSectionLayout('reviews')}>
+          <View style={[styles.sectionBlock, styles.reviewsSection]} onLayout={captureSectionLayout('reviews')}>
+            <PageShell>
             <Text style={styles.sectionLabel}>Loved by busy households</Text>
             <Text style={styles.sectionTitle}>Stories from people who like a tidy ledger</Text>
             <View style={[styles.reviewGrid, isWide && styles.reviewGridWide]}>
@@ -469,14 +547,17 @@ export default function LandingScreen() {
             <Text style={styles.reviewsDisclaimer}>
               Sample testimonials for demo purposes—they are fictional and for layout only.
             </Text>
+            </PageShell>
           </View>
         </WebSectionAnchor>
 
         {/* FAQ */}
         <WebSectionAnchor id="faq">
-          <View style={styles.faqSection} onLayout={captureSectionLayout('faq')}>
+          <View style={styles.sectionBlock} onLayout={captureSectionLayout('faq')}>
+            <PageShell style={styles.faqShell}>
             <Text style={styles.sectionLabel}>FAQ</Text>
             <Text style={styles.sectionTitle}>Straight answers</Text>
+            <View style={styles.faqList}>
             <FaqItem
               question="How do I sign up and where is my data stored?"
               answer="Create an account with email and password on the auth screens. Budgets, transactions, bills, and accounts load from Supabase tables scoped to your user after onboarding completes."
@@ -513,33 +594,40 @@ export default function LandingScreen() {
               open={openFaq === 5}
               onToggle={() => openFaqToggle(5)}
             />
+            </View>
+            </PageShell>
           </View>
         </WebSectionAnchor>
 
         {/* Bottom CTA */}
-        <LinearGradient
-          colors={['#4338CA', '#312E81']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.bottomCta}
-        >
-          <Text style={styles.bottomCtaTitle}>Ready to plan your next month?</Text>
-          <Text style={styles.bottomCtaSub}>
-            Jump into the same Overview, Budget, and Bills experience you previewed above.
-          </Text>
-          <Pressable onPress={goAuth} style={({ pressed }) => [styles.bottomCtaButton, { opacity: pressed ? 0.9 : 1 }]}>
-            <Text style={styles.bottomCtaButtonLabel}>Get Started</Text>
-            <Ionicons name="arrow-forward" size={18} color="#312E81" />
-          </Pressable>
-        </LinearGradient>
+        <PageShell style={styles.bottomCtaShell}>
+          <LinearGradient
+            colors={['#1E40AF', HERO_NAVY]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.bottomCta}
+          >
+            <Text style={styles.bottomCtaTitle}>Ready to plan your next month?</Text>
+            <Text style={styles.bottomCtaSub}>
+              Jump into the same Overview, Budget, and Bills experience you previewed above.
+            </Text>
+            <Pressable
+              onPress={goSignUp}
+              style={({ pressed }) => [styles.bottomCtaButton, { opacity: pressed ? 0.9 : 1 }]}
+            >
+              <Text style={styles.bottomCtaButtonLabel}>Get Started Free</Text>
+              <Ionicons name="arrow-forward" size={18} color={HERO_NAVY} />
+            </Pressable>
+          </LinearGradient>
+        </PageShell>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <PageShell style={styles.footer}>
           <Text style={styles.footerCopy}>© {new Date().getFullYear()} BudgetApp. All rights reserved.</Text>
           <Text style={styles.footerStack}>
             Built with Expo, React Native, Supabase, and Zustand.
           </Text>
-        </View>
+        </PageShell>
 
         <View style={{ height: insets.bottom + Spacing.xl }} />
       </ScrollView>
@@ -552,11 +640,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  pageShell: {
+    width: '100%',
+    maxWidth: CONTENT_MAX,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.screenHorizontal,
+  },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.huge,
+    paddingBottom: Spacing.massive,
   },
   navBar: {
     position: 'absolute',
@@ -564,20 +658,36 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 20,
-    backgroundColor: 'rgba(8, 12, 24, 0.86)',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: '#E2E8F0',
     ...(Platform.OS === 'web'
-      ? ({ backdropFilter: 'blur(12px)' } as object)
-      : {}),
+      ? ({
+          boxShadow: '0 1px 0 rgba(15, 23, 42, 0.06)',
+        } as object)
+      : {
+          shadowColor: '#0F172A',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.06,
+          shadowRadius: 3,
+          elevation: 2,
+        }),
+  },
+  navShell: {
+    width: '100%',
+    maxWidth: CONTENT_MAX,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.screenHorizontal,
   },
   navInner: {
     minHeight: NAV_BAR_HEIGHT,
-    paddingHorizontal: Spacing.screenHorizontal,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.md,
+  },
+  brandPress: {
+    flexShrink: 0,
   },
   brandRow: {
     flexDirection: 'row',
@@ -585,28 +695,36 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   brandMark: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: Colors.accentGlow,
-    borderWidth: 1,
-    borderColor: Colors.accent + '55',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: HERO_BLUE,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandText: {
-    color: Colors.textPrimary,
+    color: HERO_NAVY,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    letterSpacing: -0.2,
+    letterSpacing: -0.35,
   },
-  navLinks: {
+  navLinksWrap: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
     gap: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+  },
+  navFlexSpacer: {
+    flex: 1,
+  },
+  navLinkHit: {
+    paddingVertical: Spacing.xs,
   },
   navLink: {
-    color: Colors.textSecondary,
+    color: '#64748B',
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
   },
@@ -614,6 +732,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    flexShrink: 0,
+  },
+  navGetStarted: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: Radii.button,
+    backgroundColor: HERO_NAVY,
+  },
+  navGetStartedText: {
+    color: '#FFFFFF',
+    fontWeight: FontWeight.bold,
+    fontSize: FontSize.sm,
   },
   iconBtn: {
     padding: Spacing.sm,
@@ -621,230 +751,334 @@ const styles = StyleSheet.create({
   },
   signInPill: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.pill,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: Radii.button,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
   },
   signInPillText: {
-    color: Colors.textPrimary,
+    color: HERO_NAVY,
     fontWeight: FontWeight.semibold,
     fontSize: FontSize.sm,
   },
   mobileMenu: {
     paddingHorizontal: Spacing.screenHorizontal,
     paddingBottom: Spacing.lg,
+    paddingTop: Spacing.sm,
     gap: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
   },
-  mobileMenuCta: {
+  mobileMenuActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
+  },
+  mobileGhost: {
+    flex: 1,
     paddingVertical: Spacing.md,
     borderRadius: Radii.button,
-    backgroundColor: Colors.indigo,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  mobileGhostText: {
+    color: HERO_NAVY,
+    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.sm,
+  },
+  mobileMenuCta: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: Radii.button,
+    backgroundColor: HERO_NAVY,
     alignItems: 'center',
   },
   mobileMenuCtaText: {
     color: Colors.white,
     fontWeight: FontWeight.bold,
-    fontSize: FontSize.md,
-  },
-  hero: {
-    marginHorizontal: Spacing.screenHorizontal,
-    borderRadius: Radii.card,
-    padding: Spacing.xxxl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  heroGlow: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(96, 165, 250, 0.08)',
-  },
-  heroKicker: {
-    color: 'rgba(224, 231, 255, 0.85)',
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.md,
+  },
+  heroBleed: {
+    width: '100%',
+    position: 'relative',
+    paddingBottom: Spacing.xxxl,
+  },
+  heroShell: {
+    paddingTop: Spacing.xxxl,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.xxxl,
+  },
+  heroCopyBlock: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+    gap: Spacing.lg,
+  },
+  heroBadge: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(15, 23, 42, 0.25)',
+  },
+  heroBadgeText: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.9,
+    textAlign: 'center',
   },
   heroTitle: {
-    color: Colors.white,
+    color: '#FFFFFF',
     fontSize: FontSize.massive,
     fontWeight: FontWeight.black,
-    letterSpacing: -1.6,
-    lineHeight: 52,
-    marginBottom: Spacing.lg,
+    letterSpacing: -1.8,
+    lineHeight: 54,
+    textAlign: 'center',
+    maxWidth: 720,
   },
   heroSub: {
-    color: 'rgba(226, 232, 240, 0.9)',
+    color: 'rgba(226, 232, 240, 0.92)',
     fontSize: FontSize.lg,
-    lineHeight: 26,
-    marginBottom: Spacing.xxxl,
+    lineHeight: 28,
+    textAlign: 'center',
+    maxWidth: 640,
+    paddingHorizontal: Spacing.sm,
+  },
+  heroPreviewWrap: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xs,
   },
   heroCtas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
+    justifyContent: 'center',
+    marginTop: Spacing.sm,
   },
   heroCtasCol: {
     flexDirection: 'column',
     alignItems: 'stretch',
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
-  heroCtaPrimaryWrap: {
+  heroCtaSolidWrap: {
     borderRadius: Radii.buttonLg,
     overflow: 'hidden',
+    minWidth: 200,
+    ...(Platform.OS === 'web'
+      ? ({ boxShadow: '0 10px 30px rgba(0,0,0,0.2)' } as object)
+      : {}),
+  },
+  heroCtaSolid: {
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xxxl,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  heroCtaSolidLabel: {
+    color: HERO_NAVY,
+    fontWeight: FontWeight.bold,
+    fontSize: FontSize.lg,
+  },
+  heroCtaGhost: {
+    minWidth: 160,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xxl,
+    borderRadius: Radii.buttonLg,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  heroCtaGhostLabel: {
+    color: '#FFFFFF',
+    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.lg,
   },
   heroCtaFull: {
     alignSelf: 'stretch',
   },
-  heroCtaPrimary: {
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xxxl,
+  browserFrame: {
+    width: '100%',
+    maxWidth: 920,
+    borderRadius: Radii.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.5)',
+    backgroundColor: '#0F172A',
+    ...(Platform.OS === 'web'
+      ? ({
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
+        } as object)
+      : {
+          shadowColor: '#000',
+          shadowOpacity: 0.45,
+          shadowRadius: 24,
+          shadowOffset: { width: 0, height: 20 },
+          elevation: 16,
+        }),
+  },
+  browserFrameNarrow: {
+    maxWidth: '100%',
+  },
+  browserChrome: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: '#1E293B',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.35)',
+  },
+  browserTraffic: {
+    flexDirection: 'row',
+    gap: 6,
     alignItems: 'center',
   },
-  heroCtaPrimaryLabel: {
-    color: Colors.white,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.lg,
+  trafficDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  heroCtaSecondary: {
-    minWidth: 160,
-    backgroundColor: 'rgba(15, 23, 42, 0.35)',
-    borderColor: 'rgba(255,255,255,0.25)',
+  browserUrlBar: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  heroTrust: {
-    color: 'rgba(226,232,240,0.75)',
-    fontSize: FontSize.sm,
+  browserUrlText: {
+    color: '#94A3B8',
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
-  previewSection: {
-    marginTop: Spacing.massive,
-    paddingHorizontal: Spacing.screenHorizontal,
+  browserBody: {
+    flexDirection: 'row',
+    minHeight: 200,
+    backgroundColor: '#F8FAFC',
+  },
+  mockSidebar: {
+    width: 56,
+    backgroundColor: '#1E3A8A',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    gap: Spacing.sm,
+    alignItems: 'center',
+  },
+  mockSidebarActive: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  mockSidebarItem: {
+    width: 36,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  mockMain: {
+    flex: 1,
+    padding: Spacing.lg,
     gap: Spacing.md,
   },
+  mockSearch: {
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    marginBottom: Spacing.xs,
+  },
+  mockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  mockBarTrack: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  mockRowBar: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E2E8F0',
+  },
+  mockPill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    borderRadius: Radii.pill,
+    backgroundColor: '#FFEDD5',
+  },
+  mockPillBlue: {
+    backgroundColor: '#DBEAFE',
+  },
+  mockPillGreen: {
+    backgroundColor: '#DCFCE7',
+  },
+  mockPillText: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: '#9A3412',
+  },
+  mockPillTextBlue: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: '#1D4ED8',
+  },
+  mockPillTextGreen: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: '#166534',
+  },
+  sectionBlock: {
+    marginTop: Spacing.massive,
+    paddingBottom: Spacing.lg,
+  },
+  sectionAfterHero: {
+    marginTop: Spacing.xxxl,
+  },
+  previewIntro: {
+    gap: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  sectionSubNarrow: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.md,
+    lineHeight: 26,
+    marginTop: Spacing.xs,
+    maxWidth: 720,
+  },
   sectionLabel: {
-    color: Colors.blue,
+    color: HERO_BLUE,
     fontWeight: FontWeight.semibold,
     fontSize: FontSize.sm,
-    letterSpacing: 0.8,
+    letterSpacing: 0.85,
     textTransform: 'uppercase',
   },
   sectionTitle: {
     color: Colors.textPrimary,
     fontSize: FontSize.huge,
     fontWeight: FontWeight.black,
-    letterSpacing: -1,
+    letterSpacing: -1.1,
+    marginTop: Spacing.xs,
   },
   sectionSub: {
     color: Colors.textSecondary,
     fontSize: FontSize.md,
-    lineHeight: 24,
-    marginTop: Spacing.sm,
+    lineHeight: 26,
+    marginTop: Spacing.md,
     marginBottom: Spacing.xl,
-  },
-  previewMock: {
-    marginTop: Spacing.lg,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewPhone: {
-    width: 280,
-    borderRadius: Radii.card,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 12,
-    gap: Spacing.md,
-  },
-  previewPhoneBack: {
-    opacity: 0.85,
-    transform: [{ translateY: 12 }],
-  },
-  previewTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  previewTopTitle: {
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.md,
-  },
-  previewDots: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  previewDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.textMuted,
-  },
-  previewCard: {
-    borderRadius: Radii.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  previewMuted: {
-    color: Colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  previewBig: {
-    color: Colors.textPrimary,
-    fontSize: FontSize.huge,
-    fontWeight: FontWeight.black,
-    marginVertical: Spacing.xs,
-  },
-  previewRow: {
-    gap: Spacing.md,
-  },
-  previewMini: {
-    gap: Spacing.xs,
-  },
-  previewMiniLabel: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-  },
-  previewBarBg: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: Colors.surfaceBright,
-    overflow: 'hidden',
-  },
-  previewBarFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: Colors.accent,
-  },
-  previewBackLabel: {
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.md,
-  },
-  previewLine: {
-    height: 10,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceBright,
-  },
-  previewLineShort: {
-    height: 10,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceBright,
-    width: '70%',
+    maxWidth: 720,
   },
   featureGrid: {
     marginTop: Spacing.xl,
@@ -892,10 +1126,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     lineHeight: 22,
   },
-  pricingSection: {
-    marginTop: Spacing.massive,
-    paddingHorizontal: Spacing.screenHorizontal,
-  },
   pricingHonest: {
     marginTop: Spacing.sm,
     color: Colors.textMuted,
@@ -923,7 +1153,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   priceCardEmphasized: {
-    borderColor: 'rgba(99,102,241,0.55)',
+    borderColor: 'rgba(30, 64, 175, 0.55)',
     transform: [{ translateY: -4 }],
   },
   priceCardInner: {
@@ -971,8 +1201,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated,
   },
   priceButtonEmphasized: {
-    backgroundColor: Colors.indigo,
-    borderColor: Colors.indigo,
+    backgroundColor: HERO_NAVY,
+    borderColor: HERO_NAVY,
   },
   priceButtonLabel: {
     color: Colors.textPrimary,
@@ -983,8 +1213,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   reviewsSection: {
-    marginTop: Spacing.massive,
-    paddingHorizontal: Spacing.screenHorizontal,
     gap: Spacing.md,
   },
   reviewGrid: {
@@ -1027,10 +1255,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     lineHeight: 16,
   },
-  faqSection: {
-    marginTop: Spacing.massive,
-    paddingHorizontal: Spacing.screenHorizontal,
-    gap: Spacing.md,
+  faqShell: {
+    gap: Spacing.sm,
+  },
+  faqList: {
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
   faqItem: {
     borderRadius: Radii.lg,
@@ -1038,7 +1268,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
-    marginTop: Spacing.md,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -1058,12 +1287,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     lineHeight: 20,
   },
-  bottomCta: {
-    marginHorizontal: Spacing.screenHorizontal,
+  bottomCtaShell: {
+    width: '100%',
+    maxWidth: CONTENT_MAX,
+    alignSelf: 'center',
     marginTop: Spacing.massive,
+    paddingHorizontal: Spacing.screenHorizontal,
+  },
+  bottomCta: {
+    width: '100%',
     borderRadius: Radii.card,
-    padding: Spacing.xxxl,
-    gap: Spacing.md,
+    paddingVertical: Spacing.xxxl,
+    paddingHorizontal: Spacing.xxxl,
+    gap: Spacing.lg,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },
@@ -1090,13 +1326,13 @@ const styles = StyleSheet.create({
     borderRadius: Radii.buttonLg,
   },
   bottomCtaButtonLabel: {
-    color: '#312E81',
+    color: HERO_NAVY,
     fontWeight: FontWeight.bold,
     fontSize: FontSize.md,
   },
   footer: {
     marginTop: Spacing.xxxl,
-    paddingHorizontal: Spacing.screenHorizontal,
+    paddingBottom: Spacing.lg,
     gap: Spacing.sm,
     alignItems: 'center',
   },

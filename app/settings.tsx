@@ -67,7 +67,14 @@ export default function SettingsScreen() {
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: () => signOut(),
+        onPress: () => {
+          void (async () => {
+            await signOut();
+            // Clear stack (e.g. settings / modals) then show marketing — guard also redirects by pathname.
+            router.dismissAll();
+            router.replace('/landing' as any);
+          })();
+        },
       },
     ]);
   };

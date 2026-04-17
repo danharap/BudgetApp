@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Stack, router, useSegments } from 'expo-router';
+import { Stack, router, usePathname, useRootNavigationState } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -21,7 +21,8 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
   const isProfileLoaded = useAppStore((s) => s.isProfileLoaded);
   const onboardingComplete = useAppStore((s) => s.onboardingComplete);
   const setSession = useAppStore((s) => s.setSession);
-  const segments = useSegments();
+  const pathname = usePathname();
+  const rootNav = useRootNavigationState();
 
   // Track which userId we've already loaded profile for so we don't re-fetch.
   const loadedForUser = useRef<string | null>(null);
@@ -56,17 +57,19 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
 
   // Route guard — runs after auth state and profile are both settled.
   useEffect(() => {
+    // Wait until the root navigator is mounted (otherwise replace can no-op).
+    if (!rootNav?.key) return;
     // Wait until the Supabase session check resolves.
     if (isAuthLoading) return;
 
-    const rootSegment = segments[0] as string | undefined;
-    const inAuthGroup = rootSegment === 'auth';
-    const inOnboarding = rootSegment === 'onboarding';
-    const onLanding = rootSegment === 'landing';
+    const onAuthPath = pathname.startsWith('/auth');
+    const onLandingPath = pathname === '/landing';
+    const onOnboardingPath = pathname.startsWith('/onboarding');
 
     if (!user) {
-      // Not signed in → marketing landing first; auth opens from CTAs.
-      if (!inAuthGroup && !onLanding) {
+      // Not signed in → marketing landing; keep auth routes for sign-in/up.
+      if (!onAuthPath && !onLandingPath) {
+        router.dismissAll();
         router.replace('/landing' as any);
       }
       return;
@@ -79,16 +82,23 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
 
     if (!onboardingComplete) {
       // Signed in but onboarding not done → onboarding flow.
-      if (!inOnboarding) {
+      if (!onOnboardingPath) {
         router.replace('/onboarding/welcome');
       }
     } else {
       // Fully set up → main app.
-      if (inAuthGroup || inOnboarding || onLanding) {
+      if (onAuthPath || onOnboardingPath || onLandingPath) {
         router.replace('/(tabs)/' as any);
       }
     }
-  }, [user?.id, isAuthLoading, isProfileLoaded, onboardingComplete, segments[0]]);
+  }, [
+    user?.id,
+    isAuthLoading,
+    isProfileLoaded,
+    onboardingComplete,
+    pathname,
+    rootNav?.key,
+  ]);
 
   return <>{children}</>;
 }
