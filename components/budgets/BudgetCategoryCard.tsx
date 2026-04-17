@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ProgressBar } from '../ui/ProgressBar';
 import { getCategoryById } from '../../constants/categories';
@@ -27,15 +28,18 @@ export function BudgetCategoryCard({
   const barColor = isOver ? Colors.red : progress > 0.8 ? Colors.orange : category.color;
 
   return (
-    <View style={styles.container}>
+    <Pressable
+      onPress={() => router.push('/edit-budget')}
+      style={({ pressed }) => [styles.container, { opacity: pressed ? 0.75 : 1 }]}
+    >
       <View style={styles.header}>
-        <View style={[styles.iconWrapper, { backgroundColor: category.glowColor }]}>
-          <Ionicons name={category.icon as any} size={16} color={category.color} />
+        <View style={[styles.iconWrapper, { backgroundColor: category.color + '22' }]}>
+          <Ionicons name={category.icon as any} size={18} color={category.color} />
         </View>
         <View style={styles.info}>
           <Text style={styles.name}>{category.name}</Text>
           <Text style={styles.amounts}>
-            <Text style={{ color: barColor }}>{formatCurrency(spent)}</Text>
+            <Text>{formatCurrency(spent)}</Text>
             <Text style={styles.separator}> / </Text>
             <Text>{formatCurrency(limit)}</Text>
           </Text>
@@ -43,14 +47,12 @@ export function BudgetCategoryCard({
         <Text style={[styles.remaining, isOver && { color: Colors.red }]}>
           {isOver ? 'Over' : formatCurrency(remaining)}
         </Text>
+        <Ionicons name="chevron-forward" size={14} color={Colors.textDisabled} />
       </View>
-      <ProgressBar
-        progress={progress}
-        color={barColor}
-        height={5}
-        style={styles.bar}
-      />
-    </View>
+      <View style={styles.bar}>
+        <ProgressBar progress={progress} color={barColor} />
+      </View>
+    </Pressable>
   );
 }
 

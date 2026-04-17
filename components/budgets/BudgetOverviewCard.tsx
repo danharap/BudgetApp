@@ -1,5 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { AppCard } from '../ui/AppCard';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Colors } from '../../constants/colors';
@@ -21,9 +23,22 @@ export function BudgetOverviewCard({ budget, totalSpent }: BudgetOverviewCardPro
   const barColor = progress > 0.9 ? Colors.red : progress > 0.7 ? Colors.orange : Colors.accent;
 
   return (
-    <AppCard elevated style={styles.card} padding={Spacing.cardPaddingLg}>
-      <Text style={styles.monthLabel}>{formatMonthKey(budget.monthKey)}</Text>
-      <Text style={styles.title}>Budget Overview</Text>
+    <AppCard elevated style={styles.card}>
+      {/* Header with edit button */}
+      <View style={styles.titleRow}>
+        <View>
+          <Text style={styles.monthLabel}>{formatMonthKey(budget.monthKey)}</Text>
+          <Text style={styles.title}>Budget Overview</Text>
+        </View>
+        <Pressable
+          onPress={() => router.push('/edit-budget')}
+          style={({ pressed }) => [styles.editBtn, { opacity: pressed ? 0.7 : 1 }]}
+          hitSlop={8}
+        >
+          <Ionicons name="pencil-outline" size={14} color={Colors.accent} />
+          <Text style={styles.editLabel}>Edit</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.percentageRow}>
         <Text style={[styles.percentage, { color: barColor }]}>
@@ -32,24 +47,19 @@ export function BudgetOverviewCard({ budget, totalSpent }: BudgetOverviewCardPro
         <Text style={styles.percentageSub}>used</Text>
       </View>
 
-      <ProgressBar
-        progress={progress}
-        color={barColor}
-        height={10}
-        style={styles.bar}
-      />
+      <View style={styles.bar}>
+        <ProgressBar progress={progress} color={barColor} />
+      </View>
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
           <Text style={styles.statLabel}>Spent</Text>
-          <Text style={[styles.statValue, { color: barColor }]}>
-            {formatCurrency(totalSpent)}
-          </Text>
+          <Text style={styles.statValue}>{formatCurrency(totalSpent)}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
           <Text style={styles.statLabel}>{overBudget ? 'Over budget' : 'Remaining'}</Text>
-          <Text style={[styles.statValue, overBudget ? { color: Colors.red } : null]}>
+          <Text style={[styles.statValue, overBudget && { color: Colors.red }]}>
             {overBudget
               ? formatCurrency(totalSpent - budget.totalLimit)
               : formatCurrency(remaining)}
@@ -69,6 +79,12 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: Spacing.screenHorizontal,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
   monthLabel: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
@@ -81,7 +97,22 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.accentGlow,
+    borderWidth: 1,
+    borderColor: Colors.accent + '40',
+  },
+  editLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.accent,
   },
   percentageRow: {
     flexDirection: 'row',
