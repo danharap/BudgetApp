@@ -1,0 +1,55 @@
+import { Account } from '../types/account';
+import { Colors } from '../constants/colors';
+
+export const mockAccounts: Account[] = [
+  {
+    id: 'acc-1',
+    name: 'Chase Checking',
+    type: 'bank',
+    balance: 4820.50,
+    currency: 'USD',
+    color: Colors.blue,
+    icon: 'business',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'acc-2',
+    name: 'Apple Card',
+    type: 'credit_card',
+    balance: -1240.75,
+    currency: 'USD',
+    color: Colors.textSecondary,
+    icon: 'card',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'acc-3',
+    name: 'High-Yield Savings',
+    type: 'savings',
+    balance: 12500.00,
+    currency: 'USD',
+    color: Colors.accent,
+    icon: 'wallet',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'acc-4',
+    name: 'Fidelity Investments',
+    type: 'investment',
+    balance: 38750.20,
+    currency: 'USD',
+    color: Colors.purple,
+    icon: 'trending-up',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'acc-5',
+    name: 'Cash Wallet',
+    type: 'cash',
+    balance: 280.00,
+    currency: 'USD',
+    color: Colors.orange,
+    icon: 'cash',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
