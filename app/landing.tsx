@@ -8,8 +8,8 @@ import {
   Platform,
   useWindowDimensions,
   LayoutChangeEvent,
-  ViewStyle,
   StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -20,17 +20,20 @@ import { Spacing } from '../constants/spacing';
 import { FontSize, FontWeight } from '../constants/typography';
 import { Radii } from '../constants/radii';
 
-const NAV_BAR_HEIGHT = 58;
+// ─── Layout constants ────────────────────────────────────────────────────────
+const NAV_HEIGHT = 58;
 const BREAKPOINT = 780;
-const CONTENT_MAX = 1080;
-const HERO_NAVY = '#0F172A';
-const HERO_BLUE = '#1D4ED8';
-const HERO_MID = '#172554';
+const MAX_W = 1080;
 
 const SECTION_KEYS = ['features', 'pricing', 'reviews', 'faq'] as const;
 type SectionKey = (typeof SECTION_KEYS)[number];
 
-function WebSectionAnchor({ id, children }: { id: string; children: React.ReactNode }) {
+// ─── Shared shell ────────────────────────────────────────────────────────────
+function Shell({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[S.shell, style]}>{children}</View>;
+}
+
+function Anchor({ id, children }: { id: string; children: React.ReactNode }) {
   if (Platform.OS === 'web') {
     return (
       <View nativeID={id} {...({ id } as { id: string })}>
@@ -41,196 +44,267 @@ function WebSectionAnchor({ id, children }: { id: string; children: React.ReactN
   return <>{children}</>;
 }
 
-function PageShell({
-  children,
-  style,
-}: {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}) {
-  return <View style={[styles.pageShell, style]}>{children}</View>;
-}
-
-function HeroCtaButton({
+// ─── Nav CTA buttons ─────────────────────────────────────────────────────────
+function GreenBtn({
   label,
   onPress,
-  variant = 'primary',
-  containerStyle,
+  size = 'md',
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
-  containerStyle?: ViewStyle;
+  size?: 'sm' | 'md' | 'lg';
 }) {
-  if (variant === 'secondary') {
-    return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.heroCtaGhost,
-          containerStyle,
-          { opacity: pressed ? 0.85 : 1 },
+  const py = size === 'lg' ? Spacing.lg : size === 'sm' ? 7 : 10;
+  const px = size === 'lg' ? Spacing.xxxl : size === 'sm' ? Spacing.md : Spacing.lg;
+  const fs = size === 'lg' ? FontSize.lg : FontSize.sm;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+      <LinearGradient
+        colors={[Colors.accentLight, Colors.accent, Colors.accentDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          S.greenBtn,
+          { paddingVertical: py, paddingHorizontal: px },
+          size === 'lg' && S.greenBtnLg,
         ]}
       >
-        <Text style={styles.heroCtaGhostLabel}>{label}</Text>
-      </Pressable>
-    );
-  }
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.heroCtaSolidWrap,
-        containerStyle,
-        { opacity: pressed ? 0.92 : 1 },
-      ]}
-    >
-      <View style={styles.heroCtaSolid}>
-        <Text style={styles.heroCtaSolidLabel}>{label}</Text>
-      </View>
+        <Text style={[S.greenBtnLabel, { fontSize: fs }]}>{label}</Text>
+      </LinearGradient>
     </Pressable>
   );
 }
 
-function BrowserAppPreview({ isWide }: { isWide: boolean }) {
+function OutlineBtn({
+  label,
+  onPress,
+  size = 'md',
+}: {
+  label: string;
+  onPress: () => void;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const py = size === 'lg' ? Spacing.lg : size === 'sm' ? 7 : 10;
+  const px = size === 'lg' ? Spacing.xxxl : size === 'sm' ? Spacing.md : Spacing.lg;
+  const fs = size === 'lg' ? FontSize.lg : FontSize.sm;
   return (
-    <View style={[styles.browserFrame, !isWide && styles.browserFrameNarrow]}>
-      <View style={styles.browserChrome}>
-        <View style={styles.browserTraffic}>
-          <View style={[styles.trafficDot, { backgroundColor: '#FF5F57' }]} />
-          <View style={[styles.trafficDot, { backgroundColor: '#FEBC2E' }]} />
-          <View style={[styles.trafficDot, { backgroundColor: '#28C840' }]} />
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        S.outlineBtn,
+        { paddingVertical: py, paddingHorizontal: px },
+        size === 'lg' && S.outlineBtnLg,
+        { opacity: pressed ? 0.75 : 1 },
+      ]}
+    >
+      <Text style={[S.outlineBtnLabel, { fontSize: fs }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// ─── App screen mockups ──────────────────────────────────────────────────────
+function OverviewMock() {
+  return (
+    <View style={S.mockCard}>
+      <Text style={S.mockTitle}>Overview</Text>
+      {/* Summary card */}
+      <LinearGradient
+        colors={[Colors.surfaceElevated, Colors.surface]}
+        style={S.mockSummary}
+      >
+        <Text style={S.mockSummaryLabel}>Total spent · April</Text>
+        <Text style={S.mockSummaryAmount}>$2,480<Text style={S.mockSummaryCents}>.50</Text></Text>
+        <View style={S.mockSummaryRow}>
+          <View style={S.mockSummaryChip}>
+            <Text style={S.mockChipGreen}>↑ $3,200 income</Text>
+          </View>
+          <View style={S.mockSummaryChip}>
+            <Text style={S.mockChipRed}>↓ $2,480 spent</Text>
+          </View>
         </View>
-        <View style={styles.browserUrlBar}>
-          <Text style={styles.browserUrlText} numberOfLines={1}>
-            budgetapp.vercel.app/(tabs)
-          </Text>
+      </LinearGradient>
+      {/* Activity rows */}
+      {[
+        { icon: 'restaurant', label: 'Starbucks', amt: '-$6.50', color: Colors.orange },
+        { icon: 'car', label: 'Uber', amt: '-$14.00', color: Colors.blue },
+        { icon: 'trending-up', label: 'Salary', amt: '+$3,200', color: Colors.accent },
+      ].map((item) => (
+        <View key={item.label} style={S.mockRow}>
+          <View style={[S.mockRowIcon, { backgroundColor: item.color + '22' }]}>
+            <Ionicons name={item.icon as any} size={14} color={item.color} />
+          </View>
+          <Text style={S.mockRowLabel}>{item.label}</Text>
+          <Text style={[S.mockRowAmt, item.amt.startsWith('+') ? S.green : S.red]}>{item.amt}</Text>
         </View>
+      ))}
+    </View>
+  );
+}
+
+function BudgetMock() {
+  const cats = [
+    { name: 'Food & Drink', pct: 72, color: Colors.orange, spent: '$432', limit: '$600' },
+    { name: 'Transport', pct: 38, color: Colors.blue, spent: '$114', limit: '$300' },
+    { name: 'Entertainment', pct: 55, color: Colors.purple, spent: '$110', limit: '$200' },
+    { name: 'Housing', pct: 90, color: Colors.teal, spent: '$1,800', limit: '$2,000' },
+  ];
+  return (
+    <View style={S.mockCard}>
+      <View style={S.mockHeaderRow}>
+        <Text style={S.mockTitle}>Budget</Text>
+        <Text style={S.mockBadge}>Apr 2026</Text>
       </View>
-      <View style={styles.browserBody}>
-        <View style={styles.mockSidebar}>
-          <View style={styles.mockSidebarActive} />
-          <View style={styles.mockSidebarItem} />
-          <View style={styles.mockSidebarItem} />
-          <View style={styles.mockSidebarItem} />
-        </View>
-          <View style={styles.mockMain}>
-          <View style={styles.mockSearch} />
-          <View style={styles.mockRow}>
-            <View style={styles.mockBarTrack}>
-              <View style={[styles.mockRowBar, { width: '100%' }]} />
-            </View>
-            <View style={styles.mockPill}>
-              <Text style={styles.mockPillText}>Food</Text>
-            </View>
+      {cats.map((c) => (
+        <View key={c.name} style={S.mockBudgetRow}>
+          <View style={S.mockBudgetTop}>
+            <Text style={S.mockBudgetName}>{c.name}</Text>
+            <Text style={S.mockBudgetAmt}>
+              {c.spent} <Text style={S.mockBudgetOf}>/ {c.limit}</Text>
+            </Text>
           </View>
-          <View style={styles.mockRow}>
-            <View style={styles.mockBarTrack}>
-              <View style={[styles.mockRowBar, { width: '72%' }]} />
-            </View>
-            <View style={[styles.mockPill, styles.mockPillBlue]}>
-              <Text style={styles.mockPillTextBlue}>Bills</Text>
-            </View>
-          </View>
-          <View style={styles.mockRow}>
-            <View style={styles.mockBarTrack}>
-              <View style={[styles.mockRowBar, { width: '55%' }]} />
-            </View>
-            <View style={[styles.mockPill, styles.mockPillGreen]}>
-              <Text style={styles.mockPillTextGreen}>On track</Text>
-            </View>
+          <View style={S.mockBarBg}>
+            <View
+              style={[
+                S.mockBarFill,
+                { width: `${c.pct}%` as any, backgroundColor: c.color },
+              ]}
+            />
           </View>
         </View>
+      ))}
+    </View>
+  );
+}
+
+function BillsMock() {
+  const bills = [
+    { name: 'Netflix', amt: '$15.99', due: 'Apr 22', icon: 'tv-outline', color: Colors.red },
+    { name: 'Spotify', amt: '$10.99', due: 'Apr 25', icon: 'musical-notes-outline', color: Colors.accent },
+    { name: 'Electricity', amt: '$120.00', due: 'Apr 30', icon: 'flash-outline', color: Colors.yellow },
+  ];
+  return (
+    <View style={S.mockCard}>
+      <Text style={S.mockTitle}>Bills</Text>
+      {bills.map((b) => (
+        <View key={b.name} style={S.mockBillRow}>
+          <View style={[S.mockRowIcon, { backgroundColor: b.color + '22' }]}>
+            <Ionicons name={b.icon as any} size={14} color={b.color} />
+          </View>
+          <View style={S.mockBillInfo}>
+            <Text style={S.mockRowLabel}>{b.name}</Text>
+            <Text style={S.mockBillDue}>Due {b.due}</Text>
+          </View>
+          <Text style={S.mockBillAmt}>{b.amt}</Text>
+        </View>
+      ))}
+      <View style={S.mockBillFooter}>
+        <Text style={S.mockBillFooterText}>3 bills · $146.98 upcoming</Text>
       </View>
     </View>
   );
 }
 
+// ─── Feature card ─────────────────────────────────────────────────────────────
 function FeatureCard({
   icon,
+  accent,
   title,
   body,
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
+  accent?: string;
   title: string;
   body: string;
 }) {
+  const clr = accent ?? Colors.accent;
   return (
-    <View style={styles.featureCard}>
-      <View style={styles.featureIconWrap}>
-        <Ionicons name={icon} size={22} color={Colors.blue} />
+    <View style={S.featureCard}>
+      <View style={[S.featureIcon, { backgroundColor: clr + '1A', borderColor: clr + '44' }]}>
+        <Ionicons name={icon} size={22} color={clr} />
       </View>
-      <Text style={styles.featureTitle}>{title}</Text>
-      <Text style={styles.featureBody}>{body}</Text>
+      <Text style={S.featureTitle}>{title}</Text>
+      <Text style={S.featureBody}>{body}</Text>
     </View>
   );
 }
 
+// ─── Pricing card ─────────────────────────────────────────────────────────────
 function PricingCard({
   name,
   price,
-  blurb,
-  highlights,
-  emphasized,
+  sub,
+  features,
+  featured,
   onChoose,
 }: {
   name: string;
   price: string;
-  blurb: string;
-  highlights: string[];
-  emphasized?: boolean;
+  sub: string;
+  features: string[];
+  featured?: boolean;
   onChoose: () => void;
 }) {
   return (
-    <View style={[styles.priceCard, emphasized && styles.priceCardEmphasized]}>
-      {emphasized ? (
+    <View style={[S.priceCard, featured && S.priceCardFeatured]}>
+      {featured ? (
         <LinearGradient
-          colors={['rgba(30, 64, 175, 0.35)', 'rgba(15, 23, 42, 0.2)']}
+          colors={[Colors.accentGlow, 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
       ) : null}
-      <View style={styles.priceCardInner}>
-        <Text style={styles.priceName}>{name}</Text>
-        <Text style={styles.priceAmount}>{price}</Text>
-        <Text style={styles.priceBlurb}>{blurb}</Text>
-        <View style={styles.priceList}>
-          {highlights.map((line) => (
-            <View key={line} style={styles.priceRow}>
-              <Ionicons name="checkmark-circle" size={18} color={Colors.accentLight} />
-              <Text style={styles.priceRowText}>{line}</Text>
+      <View style={S.priceCardInner}>
+        {featured ? (
+          <View style={S.featuredBadge}>
+            <Text style={S.featuredBadgeText}>MOST POPULAR</Text>
+          </View>
+        ) : null}
+        <Text style={S.priceName}>{name}</Text>
+        <Text style={S.priceAmt}>{price}</Text>
+        <Text style={S.priceSub}>{sub}</Text>
+        <View style={S.priceList}>
+          {features.map((f) => (
+            <View key={f} style={S.priceRow}>
+              <Ionicons name="checkmark-circle" size={16} color={Colors.accentLight} />
+              <Text style={S.priceRowText}>{f}</Text>
             </View>
           ))}
         </View>
-        <Pressable
-          onPress={onChoose}
-          style={({ pressed }) => [
-            styles.priceButton,
-            emphasized && styles.priceButtonEmphasized,
-            { opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Text style={[styles.priceButtonLabel, emphasized && styles.priceButtonLabelOnAccent]}>
-            Get started
-          </Text>
-        </Pressable>
+        {featured ? (
+          <GreenBtn label="Get Started" onPress={onChoose} />
+        ) : (
+          <OutlineBtn label="Get Started" onPress={onChoose} />
+        )}
       </View>
     </View>
   );
 }
 
+// ─── Review card ──────────────────────────────────────────────────────────────
 function ReviewCard({ quote, name, role }: { quote: string; name: string; role: string }) {
   return (
-    <View style={styles.reviewCard}>
-      <Ionicons name="chatbox-ellipses-outline" size={20} color={Colors.indigo} />
-      <Text style={styles.reviewQuote}>“{quote}”</Text>
-      <Text style={styles.reviewName}>{name}</Text>
-      <Text style={styles.reviewRole}>{role}</Text>
+    <View style={S.reviewCard}>
+      <View style={S.reviewStars}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Ionicons key={i} name="star" size={13} color={Colors.accent} />
+        ))}
+      </View>
+      <Text style={S.reviewQuote}>"{quote}"</Text>
+      <View style={S.reviewFooter}>
+        <View style={S.reviewAvatar}>
+          <Text style={S.reviewAvatarLetter}>{name[0]}</Text>
+        </View>
+        <View>
+          <Text style={S.reviewName}>{name}</Text>
+          <Text style={S.reviewRole}>{role}</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
+// ─── FAQ item ─────────────────────────────────────────────────────────────────
 function FaqItem({
   question,
   answer,
@@ -243,16 +317,21 @@ function FaqItem({
   onToggle: () => void;
 }) {
   return (
-    <View style={styles.faqItem}>
-      <Pressable onPress={onToggle} style={styles.faqHeader}>
-        <Text style={styles.faqQuestion}>{question}</Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={Colors.textMuted} />
+    <View style={S.faqItem}>
+      <Pressable onPress={onToggle} style={S.faqHeader}>
+        <Text style={S.faqQ}>{question}</Text>
+        <Ionicons
+          name={open ? 'remove-circle-outline' : 'add-circle-outline'}
+          size={20}
+          color={open ? Colors.accent : Colors.textMuted}
+        />
       </Pressable>
-      {open ? <Text style={styles.faqAnswer}>{answer}</Text> : null}
+      {open ? <Text style={S.faqA}>{answer}</Text> : null}
     </View>
   );
 }
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function LandingScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -262,104 +341,96 @@ export default function LandingScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const navPadTop = insets.top;
-  const scrollPadTop = navPadTop + NAV_BAR_HEIGHT + Spacing.lg;
+  const scrollPadTop = insets.top + NAV_HEIGHT;
 
-  const goSignIn = useCallback(() => {
-    setMenuOpen(false);
-    router.push('/auth/sign-in');
-  }, []);
+  const goSignIn = useCallback(() => { setMenuOpen(false); router.push('/auth/sign-in'); }, []);
+  const goSignUp = useCallback(() => { setMenuOpen(false); router.push('/auth/sign-up'); }, []);
 
-  const goSignUp = useCallback(() => {
-    setMenuOpen(false);
-    router.push('/auth/sign-up');
-  }, []);
-
-  const scrollToSection = useCallback((key: SectionKey) => {
+  const scrollTo = useCallback((key: SectionKey) => {
     setMenuOpen(false);
     const y = sectionY.current[key];
-    const offset = navPadTop + NAV_BAR_HEIGHT + Spacing.sm;
     if (y != null && scrollRef.current) {
-      scrollRef.current.scrollTo({ y: Math.max(0, y - offset), animated: true });
+      scrollRef.current.scrollTo({ y: Math.max(0, y - (insets.top + NAV_HEIGHT + 8)), animated: true });
     }
-  }, [navPadTop]);
+  }, [insets.top]);
 
-  const captureSectionLayout = (key: SectionKey) => (e: LayoutChangeEvent) => {
+  const captureLayout = (key: SectionKey) => (e: LayoutChangeEvent) => {
     sectionY.current[key] = e.nativeEvent.layout.y;
   };
 
-  const openFaqToggle = (index: number) => {
-    setOpenFaq((prev) => (prev === index ? null : index));
-  };
-
   const navLink = (label: string, key: SectionKey) => (
-    <Pressable onPress={() => scrollToSection(key)} hitSlop={8} style={styles.navLinkHit}>
-      <Text style={styles.navLink}>{label}</Text>
+    <Pressable onPress={() => scrollTo(key)} hitSlop={8}>
+      <Text style={S.navLink}>{label}</Text>
     </Pressable>
   );
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.navBar, { paddingTop: navPadTop }]}>
-        <PageShell style={styles.navShell}>
-          <View style={styles.navInner}>
-            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} style={styles.brandPress}>
-              <View style={styles.brandRow}>
-                <View style={styles.brandMark}>
-                  <Ionicons name="wallet-outline" size={20} color="#FFFFFF" />
-                </View>
-                <Text style={styles.brandText}>BudgetApp</Text>
-              </View>
+    <View style={S.root}>
+      {/* ── Sticky Nav ── */}
+      <View style={[S.nav, { paddingTop: insets.top }]}>
+        <Shell style={S.navShell}>
+          <View style={S.navInner}>
+            {/* Brand */}
+            <Pressable
+              onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+              style={S.brandRow}
+            >
+              <LinearGradient
+                colors={[Colors.accentLight, Colors.accentDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={S.brandMark}
+              >
+                <Ionicons name="leaf" size={18} color="#fff" />
+              </LinearGradient>
+              <Text style={S.brandName}>BudgetApp</Text>
             </Pressable>
 
             {isWide ? (
-              <View style={styles.navLinksWrap}>
+              <View style={S.navLinks}>
                 {navLink('Features', 'features')}
                 {navLink('Pricing', 'pricing')}
                 {navLink('Reviews', 'reviews')}
                 {navLink('FAQ', 'faq')}
               </View>
             ) : (
-              <View style={styles.navFlexSpacer} />
+              <View style={{ flex: 1 }} />
             )}
 
-            <View style={styles.navActions}>
-              {!isWide ? (
-                <Pressable
-                  onPress={() => setMenuOpen((v) => !v)}
-                  style={styles.iconBtn}
-                  accessibilityLabel={menuOpen ? 'Close menu' : 'Open menu'}
-                >
-                  <Ionicons name={menuOpen ? 'close' : 'menu'} size={24} color={HERO_NAVY} />
-                </Pressable>
-              ) : null}
+            <View style={S.navRight}>
               {isWide ? (
                 <>
-                  <Pressable onPress={goSignIn} style={styles.signInPill}>
-                    <Text style={styles.signInPillText}>Sign In</Text>
+                  <Pressable onPress={goSignIn} style={S.navSignIn}>
+                    <Text style={S.navSignInText}>Sign In</Text>
                   </Pressable>
-                  <Pressable onPress={goSignUp} style={styles.navGetStarted}>
-                    <Text style={styles.navGetStartedText}>Get Started</Text>
-                  </Pressable>
+                  <GreenBtn label="Get Started" onPress={goSignUp} size="sm" />
                 </>
-              ) : null}
+              ) : (
+                <Pressable
+                  onPress={() => setMenuOpen((v) => !v)}
+                  style={S.hamburger}
+                  accessibilityLabel={menuOpen ? 'Close menu' : 'Open menu'}
+                >
+                  <Ionicons
+                    name={menuOpen ? 'close' : 'menu'}
+                    size={24}
+                    color={Colors.textPrimary}
+                  />
+                </Pressable>
+              )}
             </View>
           </View>
-        </PageShell>
+        </Shell>
 
         {!isWide && menuOpen ? (
-          <View style={styles.mobileMenu}>
+          <View style={S.mobileMenu}>
             {navLink('Features', 'features')}
             {navLink('Pricing', 'pricing')}
             {navLink('Reviews', 'reviews')}
             {navLink('FAQ', 'faq')}
-            <View style={styles.mobileMenuActions}>
-              <Pressable onPress={goSignIn} style={styles.mobileGhost}>
-                <Text style={styles.mobileGhostText}>Sign In</Text>
-              </Pressable>
-              <Pressable onPress={goSignUp} style={styles.mobileMenuCta}>
-                <Text style={styles.mobileMenuCtaText}>Get Started</Text>
-              </Pressable>
+            <View style={S.mobileMenuActions}>
+              <OutlineBtn label="Sign In" onPress={goSignIn} />
+              <GreenBtn label="Get Started" onPress={goSignUp} />
             </View>
           </View>
         ) : null}
@@ -367,267 +438,250 @@ export default function LandingScreen() {
 
       <ScrollView
         ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: scrollPadTop }]}
+        style={S.scroll}
+        contentContainerStyle={[S.scrollContent, { paddingTop: scrollPadTop }]}
         showsVerticalScrollIndicator={Platform.OS === 'web'}
       >
-        {/* Hero — full bleed, TaskManager-style */}
-        <View style={styles.heroBleed}>
+        {/* ── Hero ── */}
+        <View style={S.hero}>
+          {/* Glow orbs matching GlowBackground */}
+          <View style={S.orbTL} />
+          <View style={S.orbTR} />
+          <View style={S.orbBL} />
           <LinearGradient
-            colors={[HERO_BLUE, HERO_MID, HERO_NAVY, '#020617']}
-            locations={[0, 0.35, 0.7, 1]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <LinearGradient
-            colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(0,0,0,0.2)']}
-            locations={[0, 0.35, 1]}
-            start={{ x: 0.5, y: 0 }}
+            colors={['transparent', Colors.background]}
+            start={{ x: 0.5, y: 0.6 }}
             end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFillObject}
             pointerEvents="none"
           />
-          <PageShell style={styles.heroShell}>
-            <View style={styles.heroCopyBlock}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>FREE TO START · NO CREDIT CARD REQUIRED</Text>
-              </View>
-              <Text style={styles.heroTitle}>
-                Know where your money goes.{'\n'}Every month.
-              </Text>
-              <Text style={styles.heroSub}>
-                Track accounts, categories, recurring bills, and monthly budgets—with Supabase sync
-                and a focused mobile + web experience.
-              </Text>
-              <View style={[styles.heroCtas, !isWide && styles.heroCtasCol]}>
-                <HeroCtaButton
-                  label="Get Started Free"
-                  onPress={goSignUp}
-                  containerStyle={!isWide ? styles.heroCtaFull : undefined}
-                />
-                <HeroCtaButton
-                  label="Sign In →"
-                  onPress={goSignIn}
-                  variant="secondary"
-                  containerStyle={!isWide ? styles.heroCtaFull : undefined}
-                />
-              </View>
+          <Shell style={S.heroShell}>
+            {/* Badge */}
+            <View style={S.heroBadge}>
+              <View style={S.heroBadgeDot} />
+              <Text style={S.heroBadgeText}>FREE TO START · NO CREDIT CARD REQUIRED</Text>
             </View>
-
-            <View style={styles.heroPreviewWrap}>
-              <BrowserAppPreview isWide={isWide} />
+            {/* Headline */}
+            <Text style={[S.heroH, isWide ? S.heroHWide : null]}>
+              Know where your{'\n'}money goes.
+            </Text>
+            <Text style={S.heroSub}>
+              Track accounts, categorize spending, set monthly budgets, and stay on top of recurring
+              bills — all synced to your Supabase account.
+            </Text>
+            {/* CTAs */}
+            <View style={[S.heroCtas, !isWide && S.heroCtasCol]}>
+              <GreenBtn label="Get Started Free" onPress={goSignUp} size="lg" />
+              <OutlineBtn label="Sign In  →" onPress={goSignIn} size="lg" />
             </View>
-          </PageShell>
+          </Shell>
         </View>
 
-        {/* App preview copy */}
-        <PageShell style={[styles.sectionBlock, styles.sectionAfterHero]}>
-          <View style={styles.previewIntro}>
-            <Text style={styles.sectionLabel}>Inside the app</Text>
-            <Text style={styles.sectionTitle}>A calm dashboard for real life</Text>
-            <Text style={styles.sectionSubNarrow}>
-              Overview, Transactions, Budget, Bills, and Accounts share the same month-aware data
-              model—so totals stay consistent as you move between tabs.
-            </Text>
-          </View>
-        </PageShell>
-
-        {/* Features */}
-        <WebSectionAnchor id="features">
-          <View onLayout={captureSectionLayout('features')} style={styles.sectionBlock}>
-            <PageShell>
-            <Text style={styles.sectionLabel}>Features</Text>
-            <Text style={styles.sectionTitle}>Built around how you actually spend</Text>
-            <Text style={styles.sectionSub}>
-              These capabilities map to real screens and services in this codebase—not a fictional
-              product roadmap.
-            </Text>
-            <View style={[styles.featureGrid, isWide && styles.featureGridWide]}>
-              <FeatureCard
-                icon="wallet-outline"
-                title="Accounts & balances"
-                body="Track multiple accounts from the Accounts tab with total assets surfaced on Home—loaded via Supabase after you finish onboarding."
-              />
-              <FeatureCard
-                icon="swap-vertical-outline"
-                title="Transactions you can filter"
-                body="Browse income and expenses by month, filter by account or type on the Transactions screen, and add entries from the floating actions."
-              />
-              <FeatureCard
-                icon="pie-chart-outline"
-                title="Category budgets"
-                body="Set per-category limits for each month on the Budget screen, compare spend against limits, and jump back into onboarding flows when you need to adjust categories."
-              />
-              <FeatureCard
-                icon="calendar-outline"
-                title="Bills & recurring expenses"
-                body="See upcoming charges, mark bills paid, and keep recurring expenses visible alongside the rest of your month."
-              />
-              <FeatureCard
-                icon="link-outline"
-                title="Shortcut-friendly import"
-                body="Use the import route to pre-fill add-transaction from supported deep links (see import-transaction in this repo)—handy for iOS Shortcuts-style workflows."
-              />
-              <FeatureCard
-                icon="shield-checkmark-outline"
-                title="Secure Supabase auth"
-                body="Email and password auth with sessions stored in Secure Store on native and localStorage on web, plus guided onboarding stored in your Supabase profile."
-              />
-            </View>
-            </PageShell>
-          </View>
-        </WebSectionAnchor>
-
-        {/* Pricing */}
-        <WebSectionAnchor id="pricing">
-          <View style={styles.sectionBlock} onLayout={captureSectionLayout('pricing')}>
-            <PageShell>
-            <Text style={styles.sectionLabel}>Pricing</Text>
-            <Text style={styles.sectionTitle}>Pick a lane that fits your household</Text>
-            <Text style={styles.pricingHonest}>
-              Example pricing for a portfolio demo—Billing is not wired up in this build.
-            </Text>
-            <View style={[styles.priceGrid, isWide && styles.priceGridWide]}>
-              <PricingCard
-                name="Starter"
-                price="$0"
-                blurb="For individuals getting organized."
-                highlights={['Core budgeting & bills', 'Supabase-backed sync', 'Mobile + web preview']}
-                onChoose={goSignUp}
-              />
-              <PricingCard
-                name="Household"
-                price="$8 / mo"
-                blurb="Share visibility across partners (planned)."
-                highlights={['Everything in Starter', 'Shared categories (coming soon)', 'Priority polish pass']}
-                emphasized
-                onChoose={goSignUp}
-              />
-              <PricingCard
-                name="Team"
-                price="$18 / mo"
-                blurb="For households that want structure at scale (planned)."
-                highlights={['Planned export tools', 'Planned roles & permissions', 'White-glove onboarding (planned)']}
-                onChoose={goSignUp}
-              />
-            </View>
-            </PageShell>
-          </View>
-        </WebSectionAnchor>
-
-        {/* Reviews */}
-        <WebSectionAnchor id="reviews">
-          <View style={[styles.sectionBlock, styles.reviewsSection]} onLayout={captureSectionLayout('reviews')}>
-            <PageShell>
-            <Text style={styles.sectionLabel}>Loved by busy households</Text>
-            <Text style={styles.sectionTitle}>Stories from people who like a tidy ledger</Text>
-            <View style={[styles.reviewGrid, isWide && styles.reviewGridWide]}>
-              <ReviewCard
-                quote="The bills tab finally stopped me from double-paying subscriptions."
-                name="Avery Cole"
-                role="Freelance designer"
-              />
-              <ReviewCard
-                quote="Month picker + category cards match how I think about cash flow."
-                name="Jordan Patel"
-                role="Engineering manager"
-              />
-              <ReviewCard
-                quote="I like that onboarding actually sets up accounts before dumping me in empty states."
-                name="Sam Rivera"
-                role="Teacher & parent"
-              />
-              <ReviewCard
-                quote="Being able to filter transactions by account keeps partner spending honest."
-                name="Riley Nguyen"
-                role="Small business owner"
-              />
-            </View>
-            <Text style={styles.reviewsDisclaimer}>
-              Sample testimonials for demo purposes—they are fictional and for layout only.
-            </Text>
-            </PageShell>
-          </View>
-        </WebSectionAnchor>
-
-        {/* FAQ */}
-        <WebSectionAnchor id="faq">
-          <View style={styles.sectionBlock} onLayout={captureSectionLayout('faq')}>
-            <PageShell style={styles.faqShell}>
-            <Text style={styles.sectionLabel}>FAQ</Text>
-            <Text style={styles.sectionTitle}>Straight answers</Text>
-            <View style={styles.faqList}>
-            <FaqItem
-              question="How do I sign up and where is my data stored?"
-              answer="Create an account with email and password on the auth screens. Budgets, transactions, bills, and accounts load from Supabase tables scoped to your user after onboarding completes."
-              open={openFaq === 0}
-              onToggle={() => openFaqToggle(0)}
-            />
-            <FaqItem
-              question="Do I need a credit card?"
-              answer="No. This demo does not collect payment details; the pricing section is labeled as an example only."
-              open={openFaq === 1}
-              onToggle={() => openFaqToggle(1)}
-            />
-            <FaqItem
-              question="What happens on a new device?"
-              answer="Supabase restores your session from secure storage on native or localStorage on web, then the app reloads your profile onboarding flag and data services."
-              open={openFaq === 2}
-              onToggle={() => openFaqToggle(2)}
-            />
-            <FaqItem
-              question="Can I import transactions automatically?"
-              answer="There is a deep-link import screen that forwards parsed parameters into the add-transaction flow—useful with manual Shortcuts or automations, not a live bank feed."
-              open={openFaq === 3}
-              onToggle={() => openFaqToggle(3)}
-            />
-            <FaqItem
-              question="Is voice entry built in?"
-              answer="The Overview header includes a microphone shortcut that routes to the add-transaction screen—actual speech-to-text depends on your device and is not a separate cloud service in this repo."
-              open={openFaq === 4}
-              onToggle={() => openFaqToggle(4)}
-            />
-            <FaqItem
-              question="What if I log out?"
-              answer="Signing out clears local store data and returns you to this marketing landing page before you choose to authenticate again."
-              open={openFaq === 5}
-              onToggle={() => openFaqToggle(5)}
-            />
-            </View>
-            </PageShell>
-          </View>
-        </WebSectionAnchor>
-
-        {/* Bottom CTA */}
-        <PageShell style={styles.bottomCtaShell}>
-          <LinearGradient
-            colors={['#1E40AF', HERO_NAVY]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.bottomCta}
-          >
-            <Text style={styles.bottomCtaTitle}>Ready to plan your next month?</Text>
-            <Text style={styles.bottomCtaSub}>
-              Jump into the same Overview, Budget, and Bills experience you previewed above.
-            </Text>
-            <Pressable
-              onPress={goSignUp}
-              style={({ pressed }) => [styles.bottomCtaButton, { opacity: pressed ? 0.9 : 1 }]}
-            >
-              <Text style={styles.bottomCtaButtonLabel}>Get Started Free</Text>
-              <Ionicons name="arrow-forward" size={18} color={HERO_NAVY} />
-            </Pressable>
-          </LinearGradient>
-        </PageShell>
-
-        {/* Footer */}
-        <PageShell style={styles.footer}>
-          <Text style={styles.footerCopy}>© {new Date().getFullYear()} BudgetApp. All rights reserved.</Text>
-          <Text style={styles.footerStack}>
-            Built with Expo, React Native, Supabase, and Zustand.
+        {/* ── App Preview ── */}
+        <Shell style={S.previewSection}>
+          <Text style={S.sectionKicker}>Inside the app</Text>
+          <Text style={S.sectionHeading}>Everything you need in one place</Text>
+          <Text style={S.sectionBody}>
+            Overview, Budget, Bills, Transactions, and Accounts — each screen shares the same
+            month-aware data model so your numbers are always in sync.
           </Text>
-        </PageShell>
+          <View style={[S.previewGrid, isWide && S.previewGridWide]}>
+            <OverviewMock />
+            <BudgetMock />
+            <BillsMock />
+          </View>
+        </Shell>
+
+        {/* ── Features ── */}
+        <Anchor id="features">
+          <View onLayout={captureLayout('features')} style={S.section}>
+            <Shell>
+              <Text style={S.sectionKicker}>Features</Text>
+              <Text style={S.sectionHeading}>Built for how you actually spend</Text>
+              <Text style={S.sectionBody}>
+                Every feature maps to a real screen in this app — nothing here is a placeholder.
+              </Text>
+              <View style={[S.featureGrid, isWide && S.featureGridWide]}>
+                <FeatureCard
+                  icon="wallet-outline"
+                  title="Multi-account tracking"
+                  body="Add checking, savings, and credit accounts. Total assets surface on the Overview tab after onboarding."
+                />
+                <FeatureCard
+                  icon="swap-vertical-outline"
+                  accent={Colors.blue}
+                  title="Transaction history"
+                  body="Log income and expenses, filter by month, account, or type, and search across your full history."
+                />
+                <FeatureCard
+                  icon="pie-chart-outline"
+                  accent={Colors.purple}
+                  title="Category budgets"
+                  body="Set per-category monthly limits, watch a live progress bar, and edit any time from the Budget screen."
+                />
+                <FeatureCard
+                  icon="calendar-outline"
+                  accent={Colors.orange}
+                  title="Bills & recurring"
+                  body="Track due dates, mark bills paid, and see total upcoming spend so nothing slips through."
+                />
+                <FeatureCard
+                  icon="trending-up-outline"
+                  accent={Colors.teal}
+                  title="Spending insights"
+                  body="Weekly and daily averages, days left in month, and category breakdowns on the Overview screen."
+                />
+                <FeatureCard
+                  icon="shield-checkmark-outline"
+                  accent={Colors.accentLight}
+                  title="Secure sync"
+                  body="Email + password auth with Supabase. Sessions stored in SecureStore on native, localStorage on web."
+                />
+              </View>
+            </Shell>
+          </View>
+        </Anchor>
+
+        {/* ── Pricing ── */}
+        <Anchor id="pricing">
+          <View onLayout={captureLayout('pricing')} style={S.section}>
+            <Shell>
+              <Text style={S.sectionKicker}>Pricing</Text>
+              <Text style={S.sectionHeading}>Simple, honest pricing</Text>
+              <Text style={S.pricingNote}>
+                Example tiers for a portfolio demo — billing is not wired up in this build.
+              </Text>
+              <View style={[S.priceGrid, isWide && S.priceGridWide]}>
+                <PricingCard
+                  name="Starter"
+                  price="$0"
+                  sub="For individuals getting started."
+                  features={['Budgets & bills', 'Supabase sync', 'Mobile + web']}
+                  onChoose={goSignUp}
+                />
+                <PricingCard
+                  name="Household"
+                  price="$8 / mo"
+                  sub="For couples and shared budgets."
+                  features={['Everything in Starter', 'Shared view (coming soon)', 'Priority support']}
+                  featured
+                  onChoose={goSignUp}
+                />
+                <PricingCard
+                  name="Team"
+                  price="$18 / mo"
+                  sub="For teams wanting full structure."
+                  features={['Planned export tools', 'Roles & permissions (planned)', 'Custom categories']}
+                  onChoose={goSignUp}
+                />
+              </View>
+            </Shell>
+          </View>
+        </Anchor>
+
+        {/* ── Reviews ── */}
+        <Anchor id="reviews">
+          <View onLayout={captureLayout('reviews')} style={S.section}>
+            <Shell>
+              <Text style={S.sectionKicker}>Reviews</Text>
+              <Text style={S.sectionHeading}>Loved by people who care about their money</Text>
+              <View style={[S.reviewGrid, isWide && S.reviewGridWide]}>
+                <ReviewCard
+                  quote="The bills tab finally stopped me from double-paying subscriptions every month."
+                  name="Avery Cole"
+                  role="Freelance designer"
+                />
+                <ReviewCard
+                  quote="Category budgets with live progress bars are exactly how I wanted to see my spending."
+                  name="Jordan Patel"
+                  role="Engineering manager"
+                />
+                <ReviewCard
+                  quote="Love that onboarding sets up accounts and categories before dumping you in empty screens."
+                  name="Sam Rivera"
+                  role="Teacher & parent"
+                />
+                <ReviewCard
+                  quote="Filtering transactions by account is a game changer when you share finances."
+                  name="Riley Nguyen"
+                  role="Small business owner"
+                />
+              </View>
+              <Text style={S.reviewDisclaimer}>
+                Sample testimonials for portfolio purposes — fictional and for layout only.
+              </Text>
+            </Shell>
+          </View>
+        </Anchor>
+
+        {/* ── FAQ ── */}
+        <Anchor id="faq">
+          <View onLayout={captureLayout('faq')} style={S.section}>
+            <Shell>
+              <Text style={S.sectionKicker}>FAQ</Text>
+              <Text style={S.sectionHeading}>Questions & answers</Text>
+              <View style={S.faqList}>
+                {([
+                  ['Where is my data stored?', 'Your budgets, transactions, bills, and accounts are stored in Supabase tables scoped to your user ID. Nothing is stored on third-party servers beyond Supabase.'],
+                  ['Do I need a credit card?', 'No. This demo does not collect payment details. The pricing section shows example tiers only.'],
+                  ['Does it work on mobile and web?', 'Yes. BudgetApp is built with Expo and React Native so it runs natively on iOS and Android, and in any modern browser via Expo Web.'],
+                  ['What happens when I log out?', 'Your local store data is cleared and you return to this marketing page. Your Supabase data remains safe and loads again on next sign-in.'],
+                  ['Can I import transactions automatically?', 'There is a deep-link import screen that pre-fills the add-transaction form from supported URL parameters — useful with iOS Shortcuts.'],
+                  ['Is voice entry available?', 'The Overview header has a microphone shortcut that opens the add-transaction screen. Speech-to-text relies on your device\'s built-in capabilities.'],
+                ] as [string, string][]).map(([q, a], i) => (
+                  <FaqItem
+                    key={q}
+                    question={q}
+                    answer={a}
+                    open={openFaq === i}
+                    onToggle={() => setOpenFaq((prev) => (prev === i ? null : i))}
+                  />
+                ))}
+              </View>
+            </Shell>
+          </View>
+        </Anchor>
+
+        {/* ── Bottom CTA ── */}
+        <Shell style={S.ctaShell}>
+          <LinearGradient
+            colors={[Colors.accentGlowStrong, Colors.accentGlow, 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={S.ctaBlock}>
+            <Text style={S.ctaTitle}>Ready to take control of your finances?</Text>
+            <Text style={S.ctaSub}>
+              Join thousands of people who use BudgetApp to track spending, hit savings goals, and
+              never miss a bill.
+            </Text>
+            <View style={[S.ctaBtns, !isWide && S.ctaBtnsCol]}>
+              <GreenBtn label="Get Started Free" onPress={goSignUp} size="lg" />
+              <OutlineBtn label="Sign In" onPress={goSignIn} size="lg" />
+            </View>
+          </View>
+        </Shell>
+
+        {/* ── Footer ── */}
+        <Shell style={S.footer}>
+          <View style={S.footerDivider} />
+          <View style={[S.footerInner, isWide && S.footerInnerWide]}>
+            <View style={S.footerBrand}>
+              <LinearGradient
+                colors={[Colors.accentLight, Colors.accentDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={S.footerMark}
+              >
+                <Ionicons name="leaf" size={14} color="#fff" />
+              </LinearGradient>
+              <Text style={S.footerBrandName}>BudgetApp</Text>
+            </View>
+            <Text style={S.footerCopy}>© {new Date().getFullYear()} BudgetApp. All rights reserved.</Text>
+            <Text style={S.footerStack}>Expo · React Native · Supabase · Zustand</Text>
+          </View>
+        </Shell>
 
         <View style={{ height: insets.bottom + Spacing.xl }} />
       </ScrollView>
@@ -635,460 +689,451 @@ export default function LandingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const S = StyleSheet.create({
+  // ── Shell / layout
   root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  pageShell: {
+  shell: {
     width: '100%',
-    maxWidth: CONTENT_MAX,
+    maxWidth: MAX_W,
     alignSelf: 'center',
     paddingHorizontal: Spacing.screenHorizontal,
   },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: Spacing.massive,
-  },
-  navBar: {
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: Spacing.massive },
+
+  // ── Nav
+  nav: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(8, 12, 24, 0.92)',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: Colors.border,
     ...(Platform.OS === 'web'
-      ? ({
-          boxShadow: '0 1px 0 rgba(15, 23, 42, 0.06)',
-        } as object)
-      : {
-          shadowColor: '#0F172A',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 3,
-          elevation: 2,
-        }),
+      ? ({ backdropFilter: 'blur(14px)' } as object)
+      : {}),
   },
   navShell: {
     width: '100%',
-    maxWidth: CONTENT_MAX,
+    maxWidth: MAX_W,
     alignSelf: 'center',
     paddingHorizontal: Spacing.screenHorizontal,
   },
   navInner: {
-    minHeight: NAV_BAR_HEIGHT,
+    minHeight: NAV_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: Spacing.md,
-  },
-  brandPress: {
-    flexShrink: 0,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    flexShrink: 0,
   },
   brandMark: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: HERO_BLUE,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandText: {
-    color: HERO_NAVY,
+  brandName: {
+    color: Colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    letterSpacing: -0.35,
+    letterSpacing: -0.3,
   },
-  navLinksWrap: {
+  navLinks: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexWrap: 'wrap',
     gap: Spacing.xl,
-    paddingHorizontal: Spacing.md,
-  },
-  navFlexSpacer: {
-    flex: 1,
-  },
-  navLinkHit: {
-    paddingVertical: Spacing.xs,
   },
   navLink: {
-    color: '#64748B',
+    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
   },
-  navActions: {
+  navRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     flexShrink: 0,
   },
-  navGetStarted: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: Radii.button,
-    backgroundColor: HERO_NAVY,
+  navSignIn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
   },
-  navGetStartedText: {
-    color: '#FFFFFF',
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.sm,
-  },
-  iconBtn: {
-    padding: Spacing.sm,
-    borderRadius: Radii.md,
-  },
-  signInPill: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: Radii.button,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-  },
-  signInPillText: {
-    color: HERO_NAVY,
+  navSignInText: {
+    color: Colors.textSecondary,
     fontWeight: FontWeight.semibold,
     fontSize: FontSize.sm,
   },
+  hamburger: {
+    padding: Spacing.sm,
+    borderRadius: Radii.md,
+  },
   mobileMenu: {
     paddingHorizontal: Spacing.screenHorizontal,
-    paddingBottom: Spacing.lg,
     paddingTop: Spacing.sm,
+    paddingBottom: Spacing.lg,
     gap: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: Colors.border,
+    backgroundColor: 'rgba(8, 12, 24, 0.98)',
   },
   mobileMenuActions: {
     flexDirection: 'row',
     gap: Spacing.sm,
     marginTop: Spacing.sm,
   },
-  mobileGhost: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderRadius: Radii.button,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+
+  // ── Buttons
+  greenBtn: {
+    borderRadius: Radii.buttonLg,
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
   },
-  mobileGhostText: {
-    color: HERO_NAVY,
-    fontWeight: FontWeight.semibold,
-    fontSize: FontSize.sm,
+  greenBtnLg: {
+    minWidth: 180,
   },
-  mobileMenuCta: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderRadius: Radii.button,
-    backgroundColor: HERO_NAVY,
-    alignItems: 'center',
-  },
-  mobileMenuCtaText: {
-    color: Colors.white,
+  greenBtnLabel: {
+    color: '#0A1F0A',
     fontWeight: FontWeight.bold,
-    fontSize: FontSize.sm,
+    letterSpacing: 0.2,
   },
-  heroBleed: {
+  outlineBtn: {
+    borderRadius: Radii.buttonLg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+  },
+  outlineBtnLg: {
+    minWidth: 160,
+  },
+  outlineBtnLabel: {
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.semibold,
+  },
+
+  // ── Hero
+  hero: {
     width: '100%',
+    paddingBottom: Spacing.massive,
+    overflow: 'hidden',
     position: 'relative',
-    paddingBottom: Spacing.xxxl,
+  },
+  orbTL: {
+    position: 'absolute',
+    top: -60,
+    left: -60,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: Colors.accentGlow,
+  },
+  orbTR: {
+    position: 'absolute',
+    top: 40,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: Colors.glowBlue,
+  },
+  orbBL: {
+    position: 'absolute',
+    bottom: 0,
+    left: '30%',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: Colors.glowPurple,
   },
   heroShell: {
-    paddingTop: Spacing.xxxl,
-    paddingBottom: Spacing.lg,
-    gap: Spacing.xxxl,
-  },
-  heroCopyBlock: {
+    paddingTop: Spacing.massive,
+    gap: Spacing.xl,
     alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    gap: Spacing.lg,
   },
   heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: Radii.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    backgroundColor: 'rgba(15, 23, 42, 0.25)',
+    borderColor: Colors.accent + '44',
+    backgroundColor: Colors.accentGlow,
+  },
+  heroBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.accentLight,
   },
   heroBadgeText: {
-    color: 'rgba(255,255,255,0.92)',
+    color: Colors.accentLight,
     fontSize: 11,
     fontWeight: FontWeight.bold,
-    letterSpacing: 0.9,
-    textAlign: 'center',
+    letterSpacing: 0.8,
   },
-  heroTitle: {
-    color: '#FFFFFF',
+  heroH: {
+    color: Colors.textPrimary,
     fontSize: FontSize.massive,
     fontWeight: FontWeight.black,
-    letterSpacing: -1.8,
-    lineHeight: 54,
+    letterSpacing: -2,
+    lineHeight: 56,
     textAlign: 'center',
-    maxWidth: 720,
+    maxWidth: 680,
+  },
+  heroHWide: {
+    fontSize: 60,
+    lineHeight: 64,
   },
   heroSub: {
-    color: 'rgba(226, 232, 240, 0.92)',
+    color: Colors.textSecondary,
     fontSize: FontSize.lg,
     lineHeight: 28,
     textAlign: 'center',
-    maxWidth: 640,
+    maxWidth: 560,
     paddingHorizontal: Spacing.sm,
-  },
-  heroPreviewWrap: {
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xs,
   },
   heroCtas: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacing.md,
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    marginTop: Spacing.sm,
   },
   heroCtasCol: {
     flexDirection: 'column',
     alignItems: 'stretch',
     width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
+    maxWidth: 360,
   },
-  heroCtaSolidWrap: {
-    borderRadius: Radii.buttonLg,
-    overflow: 'hidden',
-    minWidth: 200,
-    ...(Platform.OS === 'web'
-      ? ({ boxShadow: '0 10px 30px rgba(0,0,0,0.2)' } as object)
-      : {}),
+
+  // ── App preview
+  previewSection: {
+    marginTop: Spacing.massive,
+    gap: Spacing.md,
   },
-  heroCtaSolid: {
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xxxl,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+  previewGrid: {
+    marginTop: Spacing.xl,
+    gap: Spacing.lg,
   },
-  heroCtaSolidLabel: {
-    color: HERO_NAVY,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.lg,
+  previewGridWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  heroCtaGhost: {
-    minWidth: 160,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xxl,
-    borderRadius: Radii.buttonLg,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  heroCtaGhostLabel: {
-    color: '#FFFFFF',
-    fontWeight: FontWeight.semibold,
-    fontSize: FontSize.lg,
-  },
-  heroCtaFull: {
-    alignSelf: 'stretch',
-  },
-  browserFrame: {
-    width: '100%',
-    maxWidth: 920,
-    borderRadius: Radii.lg,
-    overflow: 'hidden',
+
+  // ── Mock cards (in-app screen previews)
+  mockCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: 'rgba(15,23,42,0.5)',
-    backgroundColor: '#0F172A',
+    borderColor: Colors.border,
+    padding: Spacing.cardPadding,
+    gap: Spacing.md,
     ...(Platform.OS === 'web'
-      ? ({
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
-        } as object)
+      ? ({ boxShadow: '0 20px 40px rgba(0,0,0,0.4)' } as object)
       : {
           shadowColor: '#000',
-          shadowOpacity: 0.45,
-          shadowRadius: 24,
-          shadowOffset: { width: 0, height: 20 },
-          elevation: 16,
+          shadowOpacity: 0.4,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 12 },
+          elevation: 10,
         }),
   },
-  browserFrameNarrow: {
-    maxWidth: '100%',
+  mockTitle: {
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.bold,
+    fontSize: FontSize.md,
   },
-  browserChrome: {
+  mockHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: '#1E293B',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'space-between',
   },
-  browserTraffic: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
-  trafficDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  browserUrlBar: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  browserUrlText: {
-    color: '#94A3B8',
+  mockBadge: {
+    color: Colors.accentLight,
     fontSize: FontSize.xs,
-    fontWeight: FontWeight.medium,
-  },
-  browserBody: {
-    flexDirection: 'row',
-    minHeight: 200,
-    backgroundColor: '#F8FAFC',
-  },
-  mockSidebar: {
-    width: 56,
-    backgroundColor: '#1E3A8A',
-    paddingVertical: Spacing.md,
+    fontWeight: FontWeight.semibold,
+    backgroundColor: Colors.accentGlow,
     paddingHorizontal: Spacing.sm,
-    gap: Spacing.sm,
-    alignItems: 'center',
+    paddingVertical: 3,
+    borderRadius: Radii.pill,
   },
-  mockSidebarActive: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  mockSidebarItem: {
-    width: 36,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  mockMain: {
-    flex: 1,
+  mockSummary: {
+    borderRadius: Radii.lg,
     padding: Spacing.lg,
-    gap: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
   },
-  mockSearch: {
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#E2E8F0',
-    marginBottom: Spacing.xs,
+  mockSummaryLabel: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+  },
+  mockSummaryAmount: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.xxxl,
+    fontWeight: FontWeight.black,
+    letterSpacing: -1,
+  },
+  mockSummaryCents: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textSecondary,
+  },
+  mockSummaryRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    flexWrap: 'wrap',
+  },
+  mockSummaryChip: {
+    borderRadius: Radii.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    backgroundColor: Colors.surfaceBright,
+  },
+  mockChipGreen: {
+    color: Colors.accentLight,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+  },
+  mockChipRed: {
+    color: Colors.red,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
   },
   mockRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
-  mockBarTrack: {
-    flex: 1,
+  mockRowIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  mockRowBar: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#E2E8F0',
-  },
-  mockPill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-    borderRadius: Radii.pill,
-    backgroundColor: '#FFEDD5',
-  },
-  mockPillBlue: {
-    backgroundColor: '#DBEAFE',
-  },
-  mockPillGreen: {
-    backgroundColor: '#DCFCE7',
-  },
-  mockPillText: {
-    fontSize: 11,
-    fontWeight: FontWeight.bold,
-    color: '#9A3412',
-  },
-  mockPillTextBlue: {
-    fontSize: 11,
-    fontWeight: FontWeight.bold,
-    color: '#1D4ED8',
-  },
-  mockPillTextGreen: {
-    fontSize: 11,
-    fontWeight: FontWeight.bold,
-    color: '#166534',
-  },
-  sectionBlock: {
-    marginTop: Spacing.massive,
-    paddingBottom: Spacing.lg,
-  },
-  sectionAfterHero: {
-    marginTop: Spacing.xxxl,
-  },
-  previewIntro: {
-    gap: Spacing.md,
-    paddingBottom: Spacing.md,
-  },
-  sectionSubNarrow: {
+  mockRowLabel: {
+    flex: 1,
     color: Colors.textSecondary,
-    fontSize: FontSize.md,
-    lineHeight: 26,
-    marginTop: Spacing.xs,
-    maxWidth: 720,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
-  sectionLabel: {
-    color: HERO_BLUE,
+  mockRowAmt: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  green: { color: Colors.accentLight },
+  red: { color: Colors.red },
+  mockBudgetRow: {
+    gap: Spacing.xs,
+  },
+  mockBudgetTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  mockBudgetName: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  mockBudgetAmt: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  mockBudgetOf: {
+    color: Colors.textMuted,
+    fontWeight: FontWeight.regular,
+  },
+  mockBarBg: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.surfaceBright,
+    overflow: 'hidden',
+  },
+  mockBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  mockBillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  mockBillInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  mockBillDue: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+  },
+  mockBillAmt: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  mockBillFooter: {
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  mockBillFooterText: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+  },
+
+  // ── Section base
+  section: {
+    marginTop: Spacing.massive,
+  },
+  sectionKicker: {
+    color: Colors.accentLight,
     fontWeight: FontWeight.semibold,
     fontSize: FontSize.sm,
-    letterSpacing: 0.85,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
+    marginBottom: Spacing.sm,
   },
-  sectionTitle: {
+  sectionHeading: {
     color: Colors.textPrimary,
     fontSize: FontSize.huge,
     fontWeight: FontWeight.black,
-    letterSpacing: -1.1,
-    marginTop: Spacing.xs,
+    letterSpacing: -1.2,
+    lineHeight: 44,
+    marginBottom: Spacing.md,
   },
-  sectionSub: {
+  sectionBody: {
     color: Colors.textSecondary,
     fontSize: FontSize.md,
     lineHeight: 26,
-    marginTop: Spacing.md,
     marginBottom: Spacing.xl,
-    maxWidth: 720,
+    maxWidth: 680,
   },
-  featureGrid: {
-    marginTop: Spacing.xl,
-    gap: Spacing.lg,
-  },
+
+  // ── Features
+  featureGrid: { gap: Spacing.lg },
   featureGridWide: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
   },
   featureCard: {
     flexBasis: '48%' as any,
@@ -1100,90 +1145,93 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
     gap: Spacing.md,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
   },
-  featureIconWrap: {
+  featureIcon: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: Colors.blueGlow,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.35)',
   },
   featureTitle: {
     color: Colors.textPrimary,
-    fontSize: FontSize.xl,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
   featureBody: {
     color: Colors.textSecondary,
-    fontSize: FontSize.md,
-    lineHeight: 22,
-  },
-  pricingHonest: {
-    marginTop: Spacing.sm,
-    color: Colors.textMuted,
     fontSize: FontSize.sm,
-    lineHeight: 20,
+    lineHeight: 21,
   },
-  priceGrid: {
-    marginTop: Spacing.xxxl,
-    gap: Spacing.lg,
+
+  // ── Pricing
+  pricingNote: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+    marginBottom: Spacing.xl,
+    marginTop: -Spacing.sm,
   },
+  priceGrid: { gap: Spacing.lg },
   priceGridWide: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
   },
   priceCard: {
-    flexGrow: 1,
     flexBasis: '30%' as any,
-    minWidth: 240,
+    flexGrow: 1,
+    minWidth: 230,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
-  priceCardEmphasized: {
-    borderColor: 'rgba(30, 64, 175, 0.55)',
-    transform: [{ translateY: -4 }],
+  priceCardFeatured: {
+    borderColor: Colors.accent + '66',
+    transform: [{ translateY: -6 }],
   },
   priceCardInner: {
     padding: Spacing.cardPaddingLg,
     gap: Spacing.md,
+  },
+  featuredBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.accentGlow,
+  },
+  featuredBadgeText: {
+    color: Colors.accentLight,
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.6,
   },
   priceName: {
     color: Colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-  priceAmount: {
+  priceAmt: {
     color: Colors.textPrimary,
     fontSize: FontSize.huge,
     fontWeight: FontWeight.black,
     letterSpacing: -1,
   },
-  priceBlurb: {
+  priceSub: {
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
     lineHeight: 20,
   },
   priceList: {
     gap: Spacing.sm,
-    marginTop: Spacing.sm,
+    paddingBottom: Spacing.sm,
   },
   priceRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
     alignItems: 'flex-start',
+    gap: Spacing.sm,
   },
   priceRowText: {
     flex: 1,
@@ -1191,43 +1239,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     lineHeight: 20,
   },
-  priceButton: {
-    marginTop: Spacing.lg,
-    borderRadius: Radii.button,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
-  },
-  priceButtonEmphasized: {
-    backgroundColor: HERO_NAVY,
-    borderColor: HERO_NAVY,
-  },
-  priceButtonLabel: {
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.md,
-  },
-  priceButtonLabelOnAccent: {
-    color: Colors.white,
-  },
-  reviewsSection: {
-    gap: Spacing.md,
-  },
-  reviewGrid: {
-    marginTop: Spacing.lg,
-    gap: Spacing.lg,
-  },
+
+  // ── Reviews
+  reviewGrid: { gap: Spacing.lg },
   reviewGridWide: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
   reviewCard: {
-    flexGrow: 1,
     flexBasis: '48%' as any,
-    minWidth: 240,
+    flexGrow: 1,
+    minWidth: 230,
     padding: Spacing.cardPaddingLg,
     borderRadius: Radii.card,
     borderWidth: 1,
@@ -1235,33 +1257,55 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     gap: Spacing.md,
   },
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
   reviewQuote: {
     color: Colors.textPrimary,
     fontSize: FontSize.md,
     lineHeight: 22,
+    flex: 1,
+  },
+  reviewFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  reviewAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.accentGlow,
+    borderWidth: 1,
+    borderColor: Colors.accent + '55',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewAvatarLetter: {
+    color: Colors.accentLight,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
   },
   reviewName: {
     color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
     fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
   },
   reviewRole: {
     color: Colors.textMuted,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
   },
-  reviewsDisclaimer: {
+  reviewDisclaimer: {
     marginTop: Spacing.lg,
     color: Colors.textMuted,
     fontSize: FontSize.xs,
     lineHeight: 16,
   },
-  faqShell: {
-    gap: Spacing.sm,
-  },
-  faqList: {
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
+
+  // ── FAQ
+  faqList: { gap: Spacing.sm },
   faqItem: {
     borderRadius: Radii.lg,
     borderWidth: 1,
@@ -1275,66 +1319,97 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  faqQuestion: {
+  faqQ: {
     flex: 1,
     color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
   },
-  faqAnswer: {
+  faqA: {
     marginTop: Spacing.md,
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
-    lineHeight: 20,
+    lineHeight: 21,
   },
-  bottomCtaShell: {
-    width: '100%',
-    maxWidth: CONTENT_MAX,
-    alignSelf: 'center',
+
+  // ── Bottom CTA
+  ctaShell: {
     marginTop: Spacing.massive,
-    paddingHorizontal: Spacing.screenHorizontal,
-  },
-  bottomCta: {
-    width: '100%',
     borderRadius: Radii.card,
-    paddingVertical: Spacing.xxxl,
-    paddingHorizontal: Spacing.xxxl,
-    gap: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: Colors.accent + '30',
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
   },
-  bottomCtaTitle: {
-    color: Colors.white,
+  ctaBlock: {
+    padding: Spacing.xxxl,
+    gap: Spacing.md,
+    alignItems: 'center',
+  },
+  ctaTitle: {
+    color: Colors.textPrimary,
     fontSize: FontSize.xxxl,
     fontWeight: FontWeight.black,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+    textAlign: 'center',
+    maxWidth: 600,
   },
-  bottomCtaSub: {
-    color: 'rgba(226,232,240,0.85)',
+  ctaSub: {
+    color: Colors.textSecondary,
     fontSize: FontSize.md,
-    lineHeight: 22,
+    lineHeight: 24,
+    textAlign: 'center',
+    maxWidth: 560,
   },
-  bottomCtaButton: {
+  ctaBtns: {
     marginTop: Spacing.md,
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  ctaBtnsCol: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    width: '100%',
+    maxWidth: 360,
+  },
+
+  // ── Footer
+  footer: {
+    marginTop: Spacing.massive,
+    paddingBottom: Spacing.lg,
+  },
+  footerDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: Spacing.xxl,
+  },
+  footerInner: {
+    gap: Spacing.sm,
+    alignItems: 'center',
+  },
+  footerInnerWide: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerBrand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xxl,
-    paddingVertical: Spacing.md,
-    borderRadius: Radii.buttonLg,
   },
-  bottomCtaButtonLabel: {
-    color: HERO_NAVY,
+  footerMark: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerBrandName: {
+    color: Colors.textPrimary,
     fontWeight: FontWeight.bold,
     fontSize: FontSize.md,
-  },
-  footer: {
-    marginTop: Spacing.xxxl,
-    paddingBottom: Spacing.lg,
-    gap: Spacing.sm,
-    alignItems: 'center',
   },
   footerCopy: {
     color: Colors.textMuted,
