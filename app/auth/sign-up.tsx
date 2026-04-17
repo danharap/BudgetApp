@@ -90,6 +90,15 @@ export default function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <Pressable
+            onPress={() => router.replace('/landing' as any)}
+            style={({ pressed }) => [styles.backRow, { opacity: pressed ? 0.7 : 1 }]}
+            hitSlop={8}
+          >
+            <Ionicons name="chevron-back" size={22} color={Colors.textSecondary} />
+            <Text style={styles.backText}>Back</Text>
+          </Pressable>
+
           {/* Logo */}
           <View style={styles.logoMark}>
             <Ionicons name="leaf" size={28} color={Colors.accent} />
@@ -200,6 +209,18 @@ const styles = StyleSheet.create({
   keyboardView: { flex: 1 },
   scroll: {
     paddingHorizontal: Spacing.screenHorizontal,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    alignSelf: 'flex-start',
+    marginBottom: Spacing.lg,
+  },
+  backText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
   },
   logoMark: {
     width: 56,

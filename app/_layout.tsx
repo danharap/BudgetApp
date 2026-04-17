@@ -62,11 +62,12 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
     const rootSegment = segments[0] as string | undefined;
     const inAuthGroup = rootSegment === 'auth';
     const inOnboarding = rootSegment === 'onboarding';
+    const onLanding = rootSegment === 'landing';
 
     if (!user) {
-      // Not signed in → sign-in screen.
-      if (!inAuthGroup) {
-        router.replace('/auth/sign-in');
+      // Not signed in → marketing landing first; auth opens from CTAs.
+      if (!inAuthGroup && !onLanding) {
+        router.replace('/landing' as any);
       }
       return;
     }
@@ -83,7 +84,7 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
       }
     } else {
       // Fully set up → main app.
-      if (inAuthGroup || inOnboarding) {
+      if (inAuthGroup || inOnboarding || onLanding) {
         router.replace('/(tabs)/' as any);
       }
     }
@@ -99,6 +100,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <NavigationGuard>
           <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="landing" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="auth" />
